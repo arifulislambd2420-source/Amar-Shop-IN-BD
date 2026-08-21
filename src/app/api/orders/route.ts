@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { orderId, orderToken } = createOrder(parsed.data);
+    const { orderId, orderToken } = await createOrder(parsed.data);
     return NextResponse.json({ orderId, orderToken });
   } catch (err) {
     const message = err instanceof Error ? err.message : "অর্ডার তৈরি করা যায়নি";

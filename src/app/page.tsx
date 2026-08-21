@@ -4,9 +4,9 @@ import ProductCard from "@/components/ProductCard";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  const categories = listCategories();
-  const products = featuredProducts(8);
+export default async function HomePage() {
+  const categories = await listCategories();
+  const products = await featuredProducts(8);
 
   return (
     <div>

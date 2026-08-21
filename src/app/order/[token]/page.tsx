@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 // order id) so this URL can't be used to enumerate other customers' orders.
 export default async function OrderConfirmationPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const result = getOrderByToken(token);
+  const result = await getOrderByToken(token);
   if (!result) notFound();
   const { order, items } = result;
 

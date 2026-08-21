@@ -9,10 +9,9 @@ const SECRET = new TextEncoder().encode(
 );
 
 export async function verifyAdminCredentials(username: string, password: string): Promise<boolean> {
-  const db = getDb();
-  const row = db.prepare("SELECT password_hash FROM admin_users WHERE username = ?").get(username) as
-    | { password_hash: string }
-    | undefined;
+  const db = await getDb();
+  const [rows] = await db.execute("SELECT password_hash FROM admin_users WHERE username = ?", [username]);
+  const row = (rows as { password_hash: string }[])[0];
   if (!row) return false;
   return bcrypt.compare(password, row.password_hash);
 }

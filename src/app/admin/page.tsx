@@ -11,9 +11,9 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
-export default function AdminDashboardPage() {
-  const stats = dashboardStats();
-  const latestOrders = listOrders(10);
+export default async function AdminDashboardPage() {
+  const stats = await dashboardStats();
+  const latestOrders = await listOrders(10);
 
   const cards = [
     { label: "Total Orders", value: stats.totalOrders, color: "bg-blue-500" },

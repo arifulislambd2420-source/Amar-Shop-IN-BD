@@ -16,7 +16,7 @@ const productSchema = z.object({
 export async function GET() {
   const user = await getSessionUsername();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json({ products: listProducts(), categories: listCategories() });
+  return NextResponse.json({ products: await listProducts(), categories: await listCategories() });
 }
 
 export async function POST(req: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const data = parsed.data;
-  const id = createProduct({
+  const id = await createProduct({
     name: data.name,
     description: data.description || "",
     price: data.price,

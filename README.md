@@ -1,6 +1,6 @@
 # আমারশপ — Custom E-commerce (No WordPress)
 
-একটা সম্পূর্ণ custom-coded e-commerce website — Next.js + SQLite দিয়ে বানানো, কোনো WordPress/WooCommerce dependency ছাড়াই। এটা তোমার বর্তমান WordPress সাইট (amarshopinbd) থেকে সম্পূর্ণ আলাদা, স্বতন্ত্র একটা experiment/প্রজেক্ট।
+একটা সম্পূর্ণ custom-coded e-commerce website — Next.js + MySQL দিয়ে বানানো, কোনো WordPress/WooCommerce dependency ছাড়াই। এটা তোমার বর্তমান WordPress সাইট (amarshopinbd) থেকে সম্পূর্ণ আলাদা, স্বতন্ত্র একটা experiment/প্রজেক্ট।
 
 ## এতে যা যা আছে
 
@@ -16,12 +16,14 @@
 
 ## চালানো (প্রথমবার)
 
+প্রথমে একটা MySQL database লাগবে (লোকালি চালাতে চাইলে XAMPP/MySQL Workbench/Docker দিয়ে একটা বানাও, অথবা যেকোনো hosted MySQL)। তারপর `.env.local.example` ফাইলটা `.env.local` নামে কপি করে DB credentials বসাও।
+
 ```bash
 npm install
 npm run dev
 ```
 
-তারপর browser এ `http://localhost:3000` খোলো। প্রথমবার চালানোর সময় `data/shop.db` নামে একটা SQLite file অটোমেটিক তৈরি হবে এবং কিছু sample product দিয়ে seed হয়ে যাবে।
+তারপর browser এ `http://localhost:3000` খোলো। প্রথমবার চালানোর সময় app নিজে থেকেই দরকারি টেবিলগুলো (`CREATE TABLE IF NOT EXISTS`) বানিয়ে নেবে এবং কিছু sample product দিয়ে seed করে দেবে — শুধু নিশ্চিত করো database (schema) আগে থেকে তৈরি আছে (খালি থাকলেও চলবে)।
 
 ### Admin panel
 
@@ -31,7 +33,7 @@ Default login:
 - Username: `admin`
 - Password: `admin123`
 
-**⚠️ Production এ deploy করার আগে অবশ্যই এই password পরিবর্তন করো** (`data/shop.db` ফাইলে `admin_users` টেবিলে গিয়ে নতুন bcrypt hash বসাও, অথবা আমাকে বলো একটা "change password" ফিচার যোগ করে দিতে)।
+**⚠️ Production এ deploy করার আগে অবশ্যই এই password পরিবর্তন করো** (MySQL এ গিয়ে `admin_users` টেবিলে নতুন bcrypt hash বসাও — phpMyAdmin/hPanel থেকে বা কোনো MySQL client দিয়ে, অথবা আমাকে বলো একটা "change password" ফিচার যোগ করে দিতে)।
 
 ## Production build
 
@@ -40,19 +42,39 @@ npm run build
 npm run start
 ```
 
-## Deploy কোথায় করবে
+## Deploy — Hostinger "Deploy Web App"
 
-এটা একটা standard Next.js app (SQLite ফাইল-ভিত্তিক ডাটাবেজ সহ), তাই যেকোনো জায়গায় চালানো যায় যেখানে persistent disk আছে:
+এই app টা এখন MySQL ব্যবহার করে (SQLite/native module নেই), তাই Hostinger এর "Deploy Web App" ফিচারে (persistent disk নেই, native module compile গ্যারান্টি নেই এমন environment) নির্ভরযোগ্যভাবে চলবে।
 
-- **Railway / Render / a VPS**: সরাসরি `npm run build && npm run start` — SQLite ফাইল disk এ থেকে যাবে
-- **Vercel**: কাজ করবে কিন্তু serverless environment এ SQLite ফাইল persist নাও করতে পারে (প্রতি deploy এ reset হতে পারে) — এক্ষেত্রে পরে Postgres/Turso এ migrate করা ভালো হবে
-- **নিজের কম্পিউটার/Local সার্ভার**: `npm run build && npm run start`, বা PM2 দিয়ে background এ চালানো
+ধাপে ধাপে (hPanel এ):
+
+1. **MySQL database বানাও**: hPanel → Databases → MySQL Databases → একটা নতুন database + user বানাও (host সাধারণত `localhost`, port `3306`, hPanel পেজেই দেখাবে)। Database name, username, password, host নোট করে রাখো।
+2. **Web App বানাও**: hPanel → Websites/Deploy Web App (Node.js) → এই GitHub repo কানেক্ট করো।
+   - Node.js version: **22.x**
+   - Build command: `npm run build`
+   - Start command: `npm run start`
+3. **Environment variables** সেট করো (Web App এর Settings/Environment Variables সেকশনে):
+   - `DB_HOST` — ধাপ ১ থেকে
+   - `DB_USER` — ধাপ ১ থেকে
+   - `DB_PASSWORD` — ধাপ ১ থেকে
+   - `DB_NAME` — ধাপ ১ থেকে
+   - `DB_PORT` — সাধারণত `3306`
+   - `ADMIN_SESSION_SECRET` — একটা লম্বা random string
+4. **Deploy** করো — প্রথম রিকোয়েস্টেই app নিজে থেকে দরকারি টেবিল বানিয়ে sample data দিয়ে seed করে নেবে।
+5. প্রতি redeploy এ কোনো ডেটা হারাবে না কারণ সব কিছু এখন MySQL এ (disk এ না) সংরক্ষিত থাকে।
+
+অন্য জায়গায় (Railway/Render/VPS/local) চালাতে চাইলেও একই env vars দিয়ে সরাসরি `npm run build && npm run start` কাজ করবে, শুধু একটা MySQL database দরকার হবে।
 
 ## গুরুত্বপূর্ণ পরিবেশ ভেরিয়েবল
 
-`.env.local` ফাইলে (নিজে বানাও, git এ commit হয় না):
+`.env.local` ফাইলে (`.env.local.example` থেকে কপি করো, নিজে বানাও, git এ commit হয় না):
 
 ```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_NAME=your_db_name
 ADMIN_SESSION_SECRET=একটা-লম্বা-random-string-বসাও-production-এ
 ```
 
@@ -68,4 +90,4 @@ ADMIN_SESSION_SECRET=একটা-লম্বা-random-string-বসাও-pro
 
 ## Tech stack
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS · SQLite (better-sqlite3) · Zustand (cart state) · jose (admin session JWT) · bcryptjs (password hashing) · Zod (validation)
+Next.js 16 (App Router) · TypeScript · Tailwind CSS · MySQL (mysql2) · Zustand (cart state) · jose (admin session JWT) · bcryptjs (password hashing) · Zod (validation)

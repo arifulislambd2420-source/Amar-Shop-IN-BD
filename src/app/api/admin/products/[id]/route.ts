@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     );
   }
   try {
-    updateProduct(Number(id), parsed.data);
+    await updateProduct(Number(id), parsed.data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Update failed";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -39,6 +39,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const user = await getSessionUsername();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  deleteProduct(Number(id));
+  await deleteProduct(Number(id));
   return NextResponse.json({ success: true });
 }

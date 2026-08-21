@@ -3,7 +3,7 @@ import { listOrders } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminOrdersPage() {
-  const orders = listOrders(200);
+export default async function AdminOrdersPage() {
+  const orders = await listOrders(200);
   return <OrdersAdmin initialOrders={orders} />;
 }

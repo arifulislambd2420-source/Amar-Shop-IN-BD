@@ -6,7 +6,7 @@ import AddToCartButton from "@/components/AddToCartButton";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product || !product.is_active) notFound();
 
   const price = product.sale_price ?? product.price;

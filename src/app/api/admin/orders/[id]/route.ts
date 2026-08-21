@@ -9,9 +9,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getSessionUsername();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const order = getOrderByIdUnsafe(Number(id));
+  const order = await getOrderByIdUnsafe(Number(id));
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ order, items: getOrderItems(order.id) });
+  return NextResponse.json({ order, items: await getOrderItems(order.id) });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,6 +22,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
-  updateOrderStatus(Number(id), status);
+  await updateOrderStatus(Number(id), status);
   return NextResponse.json({ success: true });
 }

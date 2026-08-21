@@ -1,93 +1,118 @@
-import Database from "better-sqlite3";
-import path from "path";
-import fs from "fs";
+import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-const DB_PATH = path.join(DATA_DIR, "shop.db");
+// Singleton pool across hot-reloads in dev
+const globalForDb = globalThis as unknown as {
+  __pool?: mysql.Pool;
+  __dbReady?: Promise<void>;
+};
 
-// Singleton across hot-reloads in dev
-const globalForDb = globalThis as unknown as { __db?: Database.Database };
-
-export function getDb(): Database.Database {
-  if (globalForDb.__db) return globalForDb.__db;
-
-  const db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      slug TEXT NOT NULL UNIQUE
-    );
-
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      description TEXT DEFAULT '',
-      price REAL NOT NULL,
-      sale_price REAL,
-      image TEXT DEFAULT '',
-      category_id INTEGER REFERENCES categories(id),
-      stock INTEGER NOT NULL DEFAULT 0,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_token TEXT UNIQUE,
-      customer_name TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      email TEXT,
-      district TEXT NOT NULL,
-      thana TEXT NOT NULL,
-      postcode TEXT,
-      address TEXT NOT NULL,
-      payment_method TEXT NOT NULL DEFAULT 'cod',
-      status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed, cancelled
-      subtotal REAL NOT NULL,
-      total REAL NOT NULL,
-      notes TEXT DEFAULT '',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS order_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-      product_id INTEGER REFERENCES products(id),
-      product_name TEXT NOT NULL,
-      unit_price REAL NOT NULL,
-      quantity INTEGER NOT NULL,
-      line_total REAL NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS admin_users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_orders_phone ON orders(phone);
-    CREATE INDEX IF NOT EXISTS idx_orders_token ON orders(order_token);
-    CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
-  `);
-
-  seedIfEmpty(db);
-
-  globalForDb.__db = db;
-  return db;
+function createPool(): mysql.Pool {
+  return mysql.createPool({
+    host: process.env.DB_HOST || "localhost",
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "shop",
+    waitForConnections: true,
+    connectionLimit: 10,
+    dateStrings: true,
+  });
 }
 
-function seedIfEmpty(db: Database.Database) {
-  const productCount = (db.prepare("SELECT COUNT(*) AS c FROM products").get() as { c: number }).c;
+async function initSchema(pool: mysql.Pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      slug VARCHAR(255) NOT NULL UNIQUE
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      slug VARCHAR(255) NOT NULL UNIQUE,
+      description TEXT,
+      price DECIMAL(10,2) NOT NULL,
+      sale_price DECIMAL(10,2),
+      image VARCHAR(500) DEFAULT '',
+      category_id INT,
+      stock INT NOT NULL DEFAULT 0,
+      is_active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (category_id) REFERENCES categories(id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_token VARCHAR(64) UNIQUE,
+      customer_name VARCHAR(255) NOT NULL,
+      phone VARCHAR(32) NOT NULL,
+      email VARCHAR(255),
+      district VARCHAR(255) NOT NULL,
+      thana VARCHAR(255) NOT NULL,
+      postcode VARCHAR(32),
+      address TEXT NOT NULL,
+      payment_method VARCHAR(32) NOT NULL DEFAULT 'cod',
+      status VARCHAR(32) NOT NULL DEFAULT 'pending',
+      subtotal DECIMAL(10,2) NOT NULL,
+      total DECIMAL(10,2) NOT NULL,
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      product_id INT,
+      product_name VARCHAR(255) NOT NULL,
+      unit_price DECIMAL(10,2) NOT NULL,
+      quantity INT NOT NULL,
+      line_total DECIMAL(10,2) NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(255) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL
+    )
+  `);
+
+  await ensureIndex(pool, "orders", "idx_orders_phone", "CREATE INDEX idx_orders_phone ON orders(phone)");
+  await ensureIndex(pool, "orders", "idx_orders_token", "CREATE INDEX idx_orders_token ON orders(order_token)");
+  await ensureIndex(pool, "products", "idx_products_category", "CREATE INDEX idx_products_category ON products(category_id)");
+
+  await seedIfEmpty(pool);
+}
+
+// MySQL has no "CREATE INDEX IF NOT EXISTS" (< 8.0.29 style compatibility), so check first.
+async function ensureIndex(pool: mysql.Pool, table: string, indexName: string, createSql: string) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS c FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?`,
+    [table, indexName]
+  );
+  const count = (rows as { c: number }[])[0].c;
+  if (count === 0) {
+    await pool.query(createSql);
+  }
+}
+
+async function seedIfEmpty(pool: mysql.Pool) {
+  const [productRows] = await pool.query("SELECT COUNT(*) AS c FROM products");
+  const productCount = (productRows as { c: number }[])[0].c;
+
   if (productCount === 0) {
-    const insertCat = db.prepare("INSERT INTO categories (name, slug) VALUES (?, ?)");
-    const cats = [
+    const cats: [string, string][] = [
       ["মধু (Honey)", "honey"],
       ["সরিষার তেল (Mustard Oil)", "mustard-oil"],
       ["ঘি (Ghee)", "ghee"],
@@ -95,14 +120,9 @@ function seedIfEmpty(db: Database.Database) {
     ];
     const catIds: Record<string, number> = {};
     for (const [name, slug] of cats) {
-      const info = insertCat.run(name, slug);
-      catIds[slug] = info.lastInsertRowid as number;
+      const [result] = await pool.execute("INSERT INTO categories (name, slug) VALUES (?, ?)", [name, slug]);
+      catIds[slug] = (result as mysql.ResultSetHeader).insertId;
     }
-
-    const insertProd = db.prepare(`
-      INSERT INTO products (name, slug, description, price, sale_price, image, category_id, stock)
-      VALUES (@name, @slug, @description, @price, @sale_price, @image, @category_id, @stock)
-    `);
 
     const products = [
       { name: "সুন্দরবন মধু ১kg", slug: "sundarban-honey-1kg", description: "খাঁটি সুন্দরবন মধু, ১ কেজি বোতল।", price: 2500, sale_price: null, image: "/products/honey1.svg", category_id: catIds["honey"], stock: 20 },
@@ -112,12 +132,31 @@ function seedIfEmpty(db: Database.Database) {
       { name: "খাঁটি গাওয়া ঘি ৫০০g", slug: "pure-ghee-500g", description: "খাঁটি দুধের গাওয়া ঘি।", price: 900, sale_price: null, image: "/products/ghee1.svg", category_id: catIds["ghee"], stock: 25 },
       { name: "সুক্কারি মরিয়ম খেজুর ১kg", slug: "sukkari-dates-1kg", description: "প্রিমিয়াম মানের সুক্কারি খেজুর।", price: 1500, sale_price: 1400, image: "/products/dates1.svg", category_id: catIds["dates"], stock: 18 },
     ];
-    for (const p of products) insertProd.run(p);
+
+    for (const p of products) {
+      await pool.execute(
+        `INSERT INTO products (name, slug, description, price, sale_price, image, category_id, stock)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [p.name, p.slug, p.description, p.price, p.sale_price, p.image, p.category_id, p.stock]
+      );
+    }
   }
 
-  const adminCount = (db.prepare("SELECT COUNT(*) AS c FROM admin_users").get() as { c: number }).c;
+  const [adminRows] = await pool.query("SELECT COUNT(*) AS c FROM admin_users");
+  const adminCount = (adminRows as { c: number }[])[0].c;
   if (adminCount === 0) {
     const hash = bcrypt.hashSync("admin123", 10);
-    db.prepare("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)").run("admin", hash);
+    await pool.execute("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", ["admin", hash]);
   }
+}
+
+export async function getDb(): Promise<mysql.Pool> {
+  if (!globalForDb.__pool) {
+    globalForDb.__pool = createPool();
+  }
+  if (!globalForDb.__dbReady) {
+    globalForDb.__dbReady = initSchema(globalForDb.__pool);
+  }
+  await globalForDb.__dbReady;
+  return globalForDb.__pool;
 }

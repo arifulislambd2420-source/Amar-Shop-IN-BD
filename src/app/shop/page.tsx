@@ -8,8 +8,8 @@ export default async function ShopPage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const { category } = await searchParams;
-  const categories = listCategories();
-  const products = listProducts({ categorySlug: category, onlyActive: true });
+  const categories = await listCategories();
+  const products = await listProducts({ categorySlug: category, onlyActive: true });
   const activeCat = categories.find((c) => c.slug === category);
 
   return (
