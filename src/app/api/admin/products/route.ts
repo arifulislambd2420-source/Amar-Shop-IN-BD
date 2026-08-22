@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUsername } from "@/lib/auth";
-import { listProducts, createProduct, listCategories } from "@/lib/products";
+import { listProducts, createProduct, listCategories, listBrands } from "@/lib/products";
 
 const productSchema = z.object({
   name: z.string().min(1, "প্রোডাক্টের নাম দিন"),
@@ -10,13 +10,18 @@ const productSchema = z.object({
   sale_price: z.number().positive().nullable().optional(),
   image: z.string().optional(),
   category_id: z.number().int().nullable().optional(),
+  brand_id: z.number().int().nullable().optional(),
   stock: z.number().int("স্টক অবশ্যই পূর্ণসংখ্যা হতে হবে").min(0, "স্টক ঋণাত্মক হতে পারবে না"),
 });
 
 export async function GET() {
   const user = await getSessionUsername();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json({ products: await listProducts(), categories: await listCategories() });
+  return NextResponse.json({
+    products: await listProducts(),
+    categories: await listCategories(),
+    brands: await listBrands(),
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -38,6 +43,7 @@ export async function POST(req: NextRequest) {
     sale_price: data.sale_price ?? null,
     image: data.image || "/products/placeholder.svg",
     category_id: data.category_id ?? null,
+    brand_id: data.brand_id ?? null,
     stock: data.stock ?? 0,
   });
   return NextResponse.json({ id });

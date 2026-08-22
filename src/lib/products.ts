@@ -96,6 +96,52 @@ export async function getProductVariants(productId: number): Promise<ProductVari
   return rows as ProductVariant[];
 }
 
+export async function createProductVariant(input: {
+  product_id: number;
+  label: string;
+  price: number;
+  stock: number;
+}): Promise<number> {
+  const db = await getDb();
+  const [result] = await db.execute(
+    "INSERT INTO product_variants (product_id, label, price, stock) VALUES (?, ?, ?, ?)",
+    [input.product_id, input.label, input.price, input.stock]
+  );
+  return (result as mysql.ResultSetHeader).insertId;
+}
+
+export async function getProductVariantById(
+  productId: number,
+  variantId: number
+): Promise<ProductVariant | undefined> {
+  const db = await getDb();
+  const [rows] = await db.execute(
+    "SELECT * FROM product_variants WHERE id = ? AND product_id = ?",
+    [variantId, productId]
+  );
+  return (rows as ProductVariant[])[0];
+}
+
+export async function updateProductVariant(
+  productId: number,
+  variantId: number,
+  input: Partial<{ label: string; price: number; stock: number }>
+): Promise<void> {
+  const db = await getDb();
+  const current = await getProductVariantById(productId, variantId);
+  if (!current) throw new Error("Variant not found");
+  const merged = { ...current, ...input };
+  await db.execute(
+    "UPDATE product_variants SET label=?, price=?, stock=? WHERE id=? AND product_id=?",
+    [merged.label, merged.price, merged.stock, variantId, productId]
+  );
+}
+
+export async function deleteProductVariant(productId: number, variantId: number): Promise<void> {
+  const db = await getDb();
+  await db.execute("DELETE FROM product_variants WHERE id = ? AND product_id = ?", [variantId, productId]);
+}
+
 export async function featuredProducts(limit = 8): Promise<Product[]> {
   const db = await getDb();
   const [rows] = await db.query("SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC LIMIT ?", [limit]);
@@ -117,6 +163,7 @@ export async function createProduct(input: {
   sale_price: number | null;
   image: string;
   category_id: number | null;
+  brand_id?: number | null;
   stock: number;
 }): Promise<number> {
   const db = await getDb();
@@ -124,9 +171,9 @@ export async function createProduct(input: {
   const [existsRows] = await db.execute("SELECT id FROM products WHERE slug = ?", [slug]);
   if ((existsRows as unknown[]).length > 0) slug = `${slug}-${Date.now().toString().slice(-5)}`;
   const [result] = await db.execute(
-    `INSERT INTO products (name, slug, description, price, sale_price, image, category_id, stock)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [input.name, slug, input.description, input.price, input.sale_price, input.image, input.category_id, input.stock]
+    `INSERT INTO products (name, slug, description, price, sale_price, image, category_id, brand_id, stock)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [input.name, slug, input.description, input.price, input.sale_price, input.image, input.category_id, input.brand_id ?? null, input.stock]
   );
   return (result as mysql.ResultSetHeader).insertId;
 }
@@ -140,6 +187,7 @@ export async function updateProduct(
     sale_price: number | null;
     image: string;
     category_id: number | null;
+    brand_id: number | null;
     stock: number;
     is_active: number;
   }>
@@ -150,8 +198,8 @@ export async function updateProduct(
   const merged = { ...current, ...input };
   await db.execute(
     `UPDATE products SET name=?, description=?, price=?, sale_price=?,
-     image=?, category_id=?, stock=?, is_active=? WHERE id=?`,
-    [merged.name, merged.description, merged.price, merged.sale_price, merged.image, merged.category_id, merged.stock, merged.is_active, id]
+     image=?, category_id=?, brand_id=?, stock=?, is_active=? WHERE id=?`,
+    [merged.name, merged.description, merged.price, merged.sale_price, merged.image, merged.category_id, merged.brand_id, merged.stock, merged.is_active, id]
   );
 }
 
