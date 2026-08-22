@@ -8,7 +8,25 @@ export async function listCategories(): Promise<Category[]> {
   return rows as Category[];
 }
 
-export async function listProducts(opts: { categorySlug?: string; onlyActive?: boolean } = {}): Promise<Product[]> {
+export async function listBrands(): Promise<{ id: number; name: string; logo: string | null }[]> {
+  const db = await getDb();
+  const [rows] = await db.query("SELECT * FROM brands ORDER BY name");
+  return rows as { id: number; name: string; logo: string | null }[];
+}
+
+export type ProductSort = "price_asc" | "price_desc" | "newest";
+
+export async function listProducts(
+  opts: {
+    categorySlug?: string;
+    categoryId?: number;
+    brandId?: number;
+    onlyActive?: boolean;
+    sort?: ProductSort;
+    page?: number;
+    pageSize?: number;
+  } = {}
+): Promise<Product[]> {
   const db = await getDb();
   let sql = `SELECT p.* FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1=1`;
   const params: (string | number)[] = [];
@@ -17,7 +35,30 @@ export async function listProducts(opts: { categorySlug?: string; onlyActive?: b
     sql += ` AND c.slug = ?`;
     params.push(opts.categorySlug);
   }
-  sql += ` ORDER BY p.created_at DESC`;
+  if (opts.categoryId) {
+    sql += ` AND p.category_id = ?`;
+    params.push(opts.categoryId);
+  }
+  if (opts.brandId) {
+    sql += ` AND p.brand_id = ?`;
+    params.push(opts.brandId);
+  }
+  switch (opts.sort) {
+    case "price_asc":
+      sql += ` ORDER BY COALESCE(p.sale_price, p.price) ASC`;
+      break;
+    case "price_desc":
+      sql += ` ORDER BY COALESCE(p.sale_price, p.price) DESC`;
+      break;
+    default:
+      sql += ` ORDER BY p.created_at DESC`;
+  }
+  if (opts.page) {
+    const pageSize = opts.pageSize || 12;
+    const page = Math.max(1, opts.page);
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(pageSize, (page - 1) * pageSize);
+  }
   const [rows] = await db.execute(sql, params);
   return rows as Product[];
 }

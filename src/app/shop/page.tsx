@@ -5,11 +5,17 @@ import Link from "next/link";
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; brand?: string; sort?: string; page?: string }>;
 }) {
-  const { category } = await searchParams;
+  const { category, brand, sort, page } = await searchParams;
   const categories = await listCategories();
-  const products = await listProducts({ categorySlug: category, onlyActive: true });
+  const products = await listProducts({
+    categorySlug: category,
+    brandId: brand ? Number(brand) : undefined,
+    sort: sort === "price_asc" || sort === "price_desc" || sort === "newest" ? sort : undefined,
+    page: page ? Number(page) : undefined,
+    onlyActive: true,
+  });
   const activeCat = categories.find((c) => c.slug === category);
 
   return (
