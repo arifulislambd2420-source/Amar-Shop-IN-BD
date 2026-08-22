@@ -295,6 +295,25 @@ export async function dashboardStats() {
   };
 }
 
+export async function salesReport(from: string, to: string) {
+  const db = await getDb();
+  const [[{ c: totalOrders, v: totalSales }]] = (await db.query(
+    "SELECT COUNT(*) c, COALESCE(SUM(total),0) v FROM orders WHERE DATE(created_at) BETWEEN ? AND ?",
+    [from, to]
+  )) as [{ c: number; v: number }[], unknown];
+
+  const [statusRows] = await db.query(
+    "SELECT status, COUNT(*) c FROM orders WHERE DATE(created_at) BETWEEN ? AND ? GROUP BY status",
+    [from, to]
+  );
+  const byStatus: Record<OrderStatus, number> = { pending: 0, processing: 0, completed: 0, cancelled: 0 };
+  for (const row of statusRows as { status: OrderStatus; c: number }[]) {
+    byStatus[row.status] = row.c;
+  }
+
+  return { totalOrders, totalSales, byStatus };
+}
+
 export type OrderWithProductSummary = Order & { productSummary: string };
 
 export async function listOrdersWithProductSummary(limit = 10): Promise<OrderWithProductSummary[]> {
