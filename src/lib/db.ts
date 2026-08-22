@@ -30,6 +30,14 @@ async function initSchema(pool: mysql.Pool) {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS brands (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      logo VARCHAR(500)
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -88,11 +96,123 @@ async function initSchema(pool: mysql.Pool) {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_variants (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      product_id INT NOT NULL,
+      label VARCHAR(100) NOT NULL,
+      price DECIMAL(10,2) NOT NULL,
+      stock INT NOT NULL DEFAULT 0,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
+  // rating 1-5; CHECK constraints are enforced from MySQL 8.0.16+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      product_id INT NOT NULL,
+      customer_name VARCHAR(255) NOT NULL,
+      rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT,
+      approved TINYINT(1) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS blogs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      slug VARCHAR(255) NOT NULL UNIQUE,
+      cover VARCHAR(500),
+      category VARCHAR(255),
+      content TEXT NOT NULL,
+      read_time INT,
+      published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS banners (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      image VARCHAR(500) NOT NULL,
+      link VARCHAR(500),
+      position VARCHAR(32) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0,
+      active TINYINT(1) NOT NULL DEFAULT 1
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS site_settings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      setting_key VARCHAR(255) NOT NULL UNIQUE,
+      setting_value TEXT NOT NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS fraud_api_configs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      type VARCHAR(16) NOT NULL,
+      api_url VARCHAR(500) NOT NULL,
+      api_key VARCHAR(500) NOT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 0
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ip_blocks (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      ip VARCHAR(64) NOT NULL UNIQUE,
+      reason TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      phone VARCHAR(32) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Defensive ALTERs for columns added after initial release (MySQL lacks ADD COLUMN IF NOT EXISTS pre-8.0.29)
+  await ensureColumn(pool, "categories", "icon", "ALTER TABLE categories ADD COLUMN icon VARCHAR(255)");
+  await ensureColumn(pool, "products", "brand_id", "ALTER TABLE products ADD COLUMN brand_id INT REFERENCES brands(id)");
+  await ensureColumn(pool, "orders", "invoice_no", "ALTER TABLE orders ADD COLUMN invoice_no VARCHAR(50) UNIQUE");
+  await ensureColumn(pool, "orders", "shipping_fee", "ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0");
+  await ensureColumn(pool, "orders", "discount", "ALTER TABLE orders ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
+  await ensureColumn(pool, "order_items", "discount", "ALTER TABLE order_items ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
+
   await ensureIndex(pool, "orders", "idx_orders_phone", "CREATE INDEX idx_orders_phone ON orders(phone)");
   await ensureIndex(pool, "orders", "idx_orders_token", "CREATE INDEX idx_orders_token ON orders(order_token)");
   await ensureIndex(pool, "products", "idx_products_category", "CREATE INDEX idx_products_category ON products(category_id)");
+  await ensureIndex(pool, "products", "idx_products_brand", "CREATE INDEX idx_products_brand ON products(brand_id)");
+  await ensureIndex(pool, "product_variants", "idx_variants_product", "CREATE INDEX idx_variants_product ON product_variants(product_id)");
+  await ensureIndex(pool, "reviews", "idx_reviews_product", "CREATE INDEX idx_reviews_product ON reviews(product_id)");
+  await ensureIndex(pool, "reviews", "idx_reviews_approved", "CREATE INDEX idx_reviews_approved ON reviews(approved)");
 
   await seedIfEmpty(pool);
+}
+
+// MySQL has no "ADD COLUMN IF NOT EXISTS" (< 8.0.29 style compatibility), so check first.
+async function ensureColumn(pool: mysql.Pool, table: string, column: string, alterSql: string) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS c FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?`,
+    [table, column]
+  );
+  const count = (rows as { c: number }[])[0].c;
+  if (count === 0) {
+    await pool.query(alterSql);
+  }
 }
 
 // MySQL has no "CREATE INDEX IF NOT EXISTS" (< 8.0.29 style compatibility), so check first.
@@ -108,6 +228,27 @@ async function ensureIndex(pool: mysql.Pool, table: string, indexName: string, c
 }
 
 async function seedIfEmpty(pool: mysql.Pool) {
+  const [brandRows] = await pool.query("SELECT COUNT(*) AS c FROM brands");
+  const brandCount = (brandRows as { c: number }[])[0].c;
+  const brandIds: Record<string, number> = {};
+  if (brandCount === 0) {
+    const brands: [string, string | null][] = [
+      ["Sundarban", null],
+      ["Home Made", null],
+      ["Organic BD", null],
+      ["Deshi", null],
+    ];
+    for (const [name, logo] of brands) {
+      const [result] = await pool.execute("INSERT INTO brands (name, logo) VALUES (?, ?)", [name, logo]);
+      brandIds[name] = (result as mysql.ResultSetHeader).insertId;
+    }
+  } else {
+    const [rows] = await pool.query("SELECT id, name FROM brands");
+    for (const row of rows as { id: number; name: string }[]) {
+      brandIds[row.name] = row.id;
+    }
+  }
+
   const [productRows] = await pool.query("SELECT COUNT(*) AS c FROM products");
   const productCount = (productRows as { c: number }[])[0].c;
 
@@ -125,20 +266,39 @@ async function seedIfEmpty(pool: mysql.Pool) {
     }
 
     const products = [
-      { name: "সুন্দরবন মধু ১kg", slug: "sundarban-honey-1kg", description: "খাঁটি সুন্দরবন মধু, ১ কেজি বোতল।", price: 2500, sale_price: null, image: "/products/honey1.svg", category_id: catIds["honey"], stock: 20 },
-      { name: "লিচু ফুলের মধু ৫০০g", slug: "lychee-honey-500g", description: "খাঁটি লিচু ফুলের মধু।", price: 600, sale_price: 550, image: "/products/honey2.svg", category_id: catIds["honey"], stock: 35 },
-      { name: "দেশি সরিষার তেল ১ লিটার", slug: "deshi-mustard-oil-1l", description: "কাঠের ঘানিতে ভাঙানো খাঁটি সরিষার তেল।", price: 340, sale_price: null, image: "/products/mustard1.svg", category_id: catIds["mustard-oil"], stock: 50 },
-      { name: "দেশি সরিষার তেল ৫ লিটার", slug: "deshi-mustard-oil-5l", description: "কাঠের ঘানিতে ভাঙানো খাঁটি সরিষার তেল, বড় বোতল।", price: 1700, sale_price: null, image: "/products/mustard2.svg", category_id: catIds["mustard-oil"], stock: 15 },
-      { name: "খাঁটি গাওয়া ঘি ৫০০g", slug: "pure-ghee-500g", description: "খাঁটি দুধের গাওয়া ঘি।", price: 900, sale_price: null, image: "/products/ghee1.svg", category_id: catIds["ghee"], stock: 25 },
-      { name: "সুক্কারি মরিয়ম খেজুর ১kg", slug: "sukkari-dates-1kg", description: "প্রিমিয়াম মানের সুক্কারি খেজুর।", price: 1500, sale_price: 1400, image: "/products/dates1.svg", category_id: catIds["dates"], stock: 18 },
+      { name: "সুন্দরবন মধু ১kg", slug: "sundarban-honey-1kg", description: "খাঁটি সুন্দরবন মধু, ১ কেজি বোতল।", price: 2500, sale_price: null, image: "/products/honey1.svg", category_id: catIds["honey"], stock: 20, brand_id: brandIds["Sundarban"] },
+      { name: "লিচু ফুলের মধু ৫০০g", slug: "lychee-honey-500g", description: "খাঁটি লিচু ফুলের মধু।", price: 600, sale_price: 550, image: "/products/honey2.svg", category_id: catIds["honey"], stock: 35, brand_id: brandIds["Sundarban"] },
+      { name: "দেশি সরিষার তেল ১ লিটার", slug: "deshi-mustard-oil-1l", description: "কাঠের ঘানিতে ভাঙানো খাঁটি সরিষার তেল।", price: 340, sale_price: null, image: "/products/mustard1.svg", category_id: catIds["mustard-oil"], stock: 50, brand_id: brandIds["Deshi"] },
+      { name: "দেশি সরিষার তেল ৫ লিটার", slug: "deshi-mustard-oil-5l", description: "কাঠের ঘানিতে ভাঙানো খাঁটি সরিষার তেল, বড় বোতল।", price: 1700, sale_price: null, image: "/products/mustard2.svg", category_id: catIds["mustard-oil"], stock: 15, brand_id: brandIds["Deshi"] },
+      { name: "খাঁটি গাওয়া ঘি ৫০০g", slug: "pure-ghee-500g", description: "খাঁটি দুধের গাওয়া ঘি।", price: 900, sale_price: null, image: "/products/ghee1.svg", category_id: catIds["ghee"], stock: 25, brand_id: brandIds["Home Made"] },
+      { name: "সুক্কারি মরিয়ম খেজুর ১kg", slug: "sukkari-dates-1kg", description: "প্রিমিয়াম মানের সুক্কারি খেজুর।", price: 1500, sale_price: 1400, image: "/products/dates1.svg", category_id: catIds["dates"], stock: 18, brand_id: brandIds["Organic BD"] },
     ];
 
+    const productIds: Record<string, number> = {};
     for (const p of products) {
-      await pool.execute(
-        `INSERT INTO products (name, slug, description, price, sale_price, image, category_id, stock)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [p.name, p.slug, p.description, p.price, p.sale_price, p.image, p.category_id, p.stock]
+      const [result] = await pool.execute(
+        `INSERT INTO products (name, slug, description, price, sale_price, image, category_id, stock, brand_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [p.name, p.slug, p.description, p.price, p.sale_price, p.image, p.category_id, p.stock, p.brand_id]
       );
+      productIds[p.slug] = (result as mysql.ResultSetHeader).insertId;
+    }
+
+    const [variantCountRows] = await pool.query("SELECT COUNT(*) AS c FROM product_variants");
+    const variantCount = (variantCountRows as { c: number }[])[0].c;
+    if (variantCount === 0) {
+      const variants = [
+        { product_slug: "sundarban-honey-1kg", label: "৫০০g", price: 1300, stock: 20 },
+        { product_slug: "sundarban-honey-1kg", label: "১kg", price: 2500, stock: 20 },
+        { product_slug: "pure-ghee-500g", label: "৫০০g", price: 900, stock: 25 },
+        { product_slug: "pure-ghee-500g", label: "১kg", price: 1750, stock: 12 },
+      ];
+      for (const v of variants) {
+        await pool.execute(
+          "INSERT INTO product_variants (product_id, label, price, stock) VALUES (?, ?, ?, ?)",
+          [productIds[v.product_slug], v.label, v.price, v.stock]
+        );
+      }
     }
   }
 
