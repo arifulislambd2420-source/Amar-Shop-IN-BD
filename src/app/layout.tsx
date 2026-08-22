@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
+import { Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
+import FloatingButtons from "@/components/FloatingButtons";
+
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
+});
 
 export const metadata: Metadata = {
   title: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
@@ -11,12 +19,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="bn" className="h-full antialiased">
+    <html lang="bn" className={`h-full antialiased ${hindSiliguri.variable}`}>
       <body className="min-h-full flex flex-col has-mobile-nav">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
         <MobileNav />
+        <FloatingButtons />
       </body>
     </html>
   );

@@ -4,12 +4,34 @@ import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import type { Product } from "@/lib/types";
 
+export function addProductToCart(product: Product, addItem: (item: {
+  productId: number;
+  name: string;
+  slug: string;
+  price: number;
+  image: string;
+  quantity: number;
+  stock: number;
+}) => void) {
+  addItem({
+    productId: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: product.sale_price ?? product.price,
+    image: product.image,
+    quantity: 1,
+    stock: product.stock,
+  });
+}
+
 export default function AddToCartButton({
   product,
   compact = false,
+  iconOnly = false,
 }: {
   product: Product;
   compact?: boolean;
+  iconOnly?: boolean;
 }) {
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
@@ -17,17 +39,28 @@ export default function AddToCartButton({
 
   function handleAdd() {
     if (outOfStock) return;
-    addItem({
-      productId: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: product.sale_price ?? product.price,
-      image: product.image,
-      quantity: 1,
-      stock: product.stock,
-    });
+    addProductToCart(product, addItem);
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
+  }
+
+  if (iconOnly) {
+    return (
+      <button
+        onClick={handleAdd}
+        disabled={outOfStock}
+        aria-label="কার্টে যোগ করুন"
+        className={`shrink-0 flex items-center justify-center h-9 w-9 rounded-lg border transition-colors ${
+          outOfStock
+            ? "bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed"
+            : added
+            ? "bg-green-600 text-white border-green-600"
+            : "bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white"
+        }`}
+      >
+        <CartGlyph />
+      </button>
+    );
   }
 
   return (
@@ -46,5 +79,15 @@ export default function AddToCartButton({
     >
       {outOfStock ? "স্টক নেই" : added ? "যোগ হয়েছে ✓" : "কার্টে যোগ করুন"}
     </button>
+  );
+}
+
+function CartGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
   );
 }

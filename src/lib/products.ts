@@ -63,6 +63,16 @@ export async function listProducts(
   return rows as Product[];
 }
 
+export async function searchProducts(q: string, limit = 8): Promise<Product[]> {
+  const db = await getDb();
+  const term = `%${q}%`;
+  const [rows] = await db.execute(
+    "SELECT * FROM products WHERE is_active = 1 AND name LIKE ? ORDER BY created_at DESC LIMIT ?",
+    [term, limit]
+  );
+  return rows as Product[];
+}
+
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
   const db = await getDb();
   const [rows] = await db.execute("SELECT * FROM products WHERE slug = ?", [slug]);

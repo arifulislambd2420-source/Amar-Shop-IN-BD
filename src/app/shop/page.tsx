@@ -1,26 +1,28 @@
-import { listProducts, listCategories } from "@/lib/products";
+import { listProducts, listCategories, searchProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; brand?: string; sort?: string; page?: string }>;
+  searchParams: Promise<{ category?: string; brand?: string; sort?: string; page?: string; q?: string }>;
 }) {
-  const { category, brand, sort, page } = await searchParams;
+  const { category, brand, sort, page, q } = await searchParams;
   const categories = await listCategories();
-  const products = await listProducts({
-    categorySlug: category,
-    brandId: brand ? Number(brand) : undefined,
-    sort: sort === "price_asc" || sort === "price_desc" || sort === "newest" ? sort : undefined,
-    page: page ? Number(page) : undefined,
-    onlyActive: true,
-  });
+  const products = q
+    ? await searchProducts(q, 48)
+    : await listProducts({
+        categorySlug: category,
+        brandId: brand ? Number(brand) : undefined,
+        sort: sort === "price_asc" || sort === "price_desc" || sort === "newest" ? sort : undefined,
+        page: page ? Number(page) : undefined,
+        onlyActive: true,
+      });
   const activeCat = categories.find((c) => c.slug === category);
 
   return (
     <div className="container-x py-8">
-      <h1 className="text-2xl font-bold mb-6">{activeCat ? activeCat.name : "সব পণ্য"}</h1>
+      <h1 className="text-2xl font-bold mb-6">{q ? `"${q}" এর ফলাফল` : activeCat ? activeCat.name : "সব পণ্য"}</h1>
 
       <div className="flex gap-2 flex-wrap mb-6">
         <Link
