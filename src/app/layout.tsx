@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import FloatingButtons from "@/components/FloatingButtons";
+import CartDrawer from "@/components/CartDrawer";
 
 const hindSiliguri = Hind_Siliguri({
   subsets: ["bengali", "latin"],
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Footer />
         <MobileNav />
         <FloatingButtons />
+        <CartDrawer />
       </body>
     </html>
   );

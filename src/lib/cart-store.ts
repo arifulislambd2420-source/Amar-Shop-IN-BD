@@ -12,12 +12,18 @@ type CartState = {
   clear: () => void;
   subtotal: () => number;
   count: () => number;
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 };
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      isDrawerOpen: false,
+      openDrawer: () => set({ isDrawerOpen: true }),
+      closeDrawer: () => set({ isDrawerOpen: false }),
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) => i.productId === item.productId);
@@ -48,6 +54,6 @@ export const useCartStore = create<CartState>()(
       subtotal: () => get().items.reduce((s, i) => s + i.price * i.quantity, 0),
       count: () => get().items.reduce((s, i) => s + i.quantity, 0),
     }),
-    { name: "custom-shop-cart" }
+    { name: "custom-shop-cart", partialize: (state) => ({ items: state.items }) }
   )
 );

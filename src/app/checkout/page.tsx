@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "@/lib/cart-store";
-import { formatTaka } from "@/lib/format";
+import { formatTaka, SHIPPING_FEE } from "@/lib/format";
 import { BD_DISTRICTS } from "@/lib/districts";
 
 export default function CheckoutPage() {
@@ -13,6 +13,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [coupon, setCoupon] = useState("");
   const [form, setForm] = useState({
     customer_name: "",
     phone: "",
@@ -149,10 +150,29 @@ export default function CheckoutPage() {
           </Field>
 
           <div className="border border-gray-200 rounded-lg p-4">
-            <div className="font-medium mb-1">পেমেন্ট পদ্ধতি</div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" checked readOnly /> ক্যাশ অন ডেলিভারি (Cash on Delivery)
-            </label>
+            <div className="font-medium mb-2">পেমেন্ট পদ্ধতি</div>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" checked readOnly /> ক্যাশ অন ডেলিভারি (Cash on Delivery)
+              </label>
+              {["বিকাশ (bKash)", "নগদ (Nagad)", "রকেট (Rocket)"].map((name) => (
+                <label key={name} className="flex items-center gap-2 text-sm text-gray-400">
+                  <input type="radio" disabled />
+                  {name}
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">শীঘ্রই আসছে</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="font-medium mb-2">কুপন কোড (ঐচ্ছিক)</div>
+            <input
+              value={coupon}
+              onChange={(e) => setCoupon(e.target.value)}
+              placeholder="কুপন কোড দিন"
+              className="input"
+            />
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -176,9 +196,21 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-gray-600">সাবটোটাল</span>
+            <span className="font-semibold">{formatTaka(subtotal())}</span>
+          </div>
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-gray-600">ডেলিভারি চার্জ</span>
+            <span className="font-semibold">{formatTaka(SHIPPING_FEE)}</span>
+          </div>
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-gray-600">ডিসকাউন্ট</span>
+            <span className="font-semibold">{formatTaka(0)}</span>
+          </div>
           <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
             <span>মোট</span>
-            <span className="text-brand-orange">{formatTaka(subtotal())}</span>
+            <span className="text-brand-orange">{formatTaka(subtotal() + SHIPPING_FEE)}</span>
           </div>
         </div>
       </div>

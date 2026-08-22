@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import mysql from "mysql2/promise";
 import { getDb } from "./db";
+import { SHIPPING_FEE } from "./format";
 import type { Order, OrderItem, OrderStatus } from "./types";
 
 export type NewOrderInput = {
@@ -52,11 +53,12 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
     }
 
     const subtotal = lineItems.reduce((s, li) => s + li.line_total, 0);
-    const total = subtotal; // no shipping/tax logic yet
+    const shippingFee = SHIPPING_FEE;
+    const total = subtotal + shippingFee;
 
     const [orderResult] = await conn.execute(
-      `INSERT INTO orders (order_token, customer_name, phone, email, district, thana, postcode, address, payment_method, status, subtotal, total, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cod', 'pending', ?, ?, ?)`,
+      `INSERT INTO orders (order_token, customer_name, phone, email, district, thana, postcode, address, payment_method, status, subtotal, shipping_fee, total, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cod', 'pending', ?, ?, ?, ?)`,
       [
         orderToken,
         input.customer_name,
@@ -67,6 +69,7 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
         input.postcode || null,
         input.address,
         subtotal,
+        shippingFee,
         total,
         input.notes || "",
       ]

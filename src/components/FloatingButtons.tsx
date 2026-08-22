@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 
@@ -9,13 +8,15 @@ const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "8801XXXXXXXX
 
 export default function FloatingButtons() {
   const count = useCartStore((s) => s.count());
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   return (
     <div className="fixed bottom-20 md:bottom-6 right-4 z-40 flex flex-col items-center gap-3">
-      <Link
-        href="/cart"
+      <button
+        type="button"
+        onClick={openDrawer}
         aria-label="কার্ট দেখুন"
         className="relative h-12 w-12 rounded-full bg-brand-orange text-white shadow-lg flex items-center justify-center hover:bg-brand-orange-dark transition-colors"
       >
@@ -25,7 +26,7 @@ export default function FloatingButtons() {
             {count > 9 ? "9+" : count}
           </span>
         )}
-      </Link>
+      </button>
       <a
         href={`https://wa.me/${WHATSAPP_NUMBER}`}
         target="_blank"
