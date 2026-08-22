@@ -4,23 +4,31 @@ import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import type { Product } from "@/lib/types";
 
-export function addProductToCart(product: Product, addItem: (item: {
-  productId: number;
-  name: string;
-  slug: string;
-  price: number;
-  image: string;
-  quantity: number;
-  stock: number;
-}) => void) {
+export function addProductToCart(
+  product: Product,
+  addItem: (item: {
+    productId: number;
+    name: string;
+    slug: string;
+    price: number;
+    image: string;
+    quantity: number;
+    stock: number;
+    variantLabel?: string;
+    variantId?: number;
+  }) => void,
+  options?: { quantity?: number; variantLabel?: string; variantId?: number; price?: number; stock?: number }
+) {
   addItem({
     productId: product.id,
     name: product.name,
     slug: product.slug,
-    price: product.sale_price ?? product.price,
+    price: options?.price ?? product.sale_price ?? product.price,
     image: product.image,
-    quantity: 1,
-    stock: product.stock,
+    quantity: options?.quantity ?? 1,
+    stock: options?.stock ?? product.stock,
+    variantLabel: options?.variantLabel,
+    variantId: options?.variantId,
   });
 }
 

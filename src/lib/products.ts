@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise";
 import { getDb } from "./db";
-import type { Product, Category } from "./types";
+import type { Product, Category, ProductVariant } from "./types";
 
 export async function listCategories(): Promise<Category[]> {
   const db = await getDb();
@@ -85,6 +85,15 @@ export async function getProductById(id: number): Promise<Product | undefined> {
   const db = await getDb();
   const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [id]);
   return (rows as Product[])[0];
+}
+
+export async function getProductVariants(productId: number): Promise<ProductVariant[]> {
+  const db = await getDb();
+  const [rows] = await db.execute(
+    "SELECT * FROM product_variants WHERE product_id = ? ORDER BY price ASC",
+    [productId]
+  );
+  return rows as ProductVariant[];
 }
 
 export async function featuredProducts(limit = 8): Promise<Product[]> {

@@ -51,6 +51,7 @@ export default function CartPage() {
                       </div>
                       <Link href={`/product/${item.slug}`} className="font-medium hover:text-brand-orange">
                         {item.name}
+                        {item.variantLabel && <span className="text-gray-500 font-normal"> ({item.variantLabel})</span>}
                       </Link>
                     </div>
                   </td>
@@ -58,14 +59,14 @@ export default function CartPage() {
                   <td className="py-3 pr-3">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setQuantity(item.productId, item.quantity - 1)}
+                        onClick={() => setQuantity(item.productId, item.quantity - 1, item.variantLabel)}
                         className="h-7 w-7 rounded border border-gray-300 flex items-center justify-center"
                       >
                         −
                       </button>
                       <span className="w-6 text-center">{item.quantity}</span>
                       <button
-                        onClick={() => setQuantity(item.productId, item.quantity + 1)}
+                        onClick={() => setQuantity(item.productId, item.quantity + 1, item.variantLabel)}
                         disabled={item.quantity >= item.stock}
                         className="h-7 w-7 rounded border border-gray-300 flex items-center justify-center disabled:opacity-40"
                       >
@@ -78,7 +79,7 @@ export default function CartPage() {
                   </td>
                   <td className="py-3 text-right">
                     <button
-                      onClick={() => removeItem(item.productId)}
+                      onClick={() => removeItem(item.productId, item.variantLabel)}
                       aria-label="সরিয়ে ফেলুন"
                       className="text-red-500 hover:text-red-600 p-2"
                     >

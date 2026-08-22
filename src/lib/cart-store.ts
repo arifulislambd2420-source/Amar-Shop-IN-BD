@@ -7,8 +7,8 @@ import type { CartItem } from "./types";
 type CartState = {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: number) => void;
-  setQuantity: (productId: number, quantity: number) => void;
+  removeItem: (productId: number, variantLabel?: string) => void;
+  setQuantity: (productId: number, quantity: number, variantLabel?: string) => void;
   clear: () => void;
   subtotal: () => number;
   count: () => number;
@@ -26,27 +26,41 @@ export const useCartStore = create<CartState>()(
       closeDrawer: () => set({ isDrawerOpen: false }),
       addItem: (item) =>
         set((state) => {
-          const existing = state.items.find((i) => i.productId === item.productId);
+          const existing = state.items.find(
+            (i) => i.productId === item.productId && i.variantLabel === item.variantLabel
+          );
           if (existing) {
             const nextQty = Math.min(existing.quantity + item.quantity, existing.stock);
             return {
               items: state.items.map((i) =>
-                i.productId === item.productId ? { ...i, quantity: nextQty } : i
+                i.productId === item.productId && i.variantLabel === item.variantLabel
+                  ? { ...i, quantity: nextQty }
+                  : i
               ),
             };
           }
           return { items: [...state.items, item] };
         }),
-      removeItem: (productId) =>
-        set((state) => ({ items: state.items.filter((i) => i.productId !== productId) })),
-      setQuantity: (productId, quantity) =>
+      removeItem: (productId, variantLabel) =>
+        set((state) => ({
+          items: state.items.filter(
+            (i) => !(i.productId === productId && i.variantLabel === variantLabel)
+          ),
+        })),
+      setQuantity: (productId, quantity, variantLabel) =>
         set((state) => {
           if (quantity <= 0) {
-            return { items: state.items.filter((i) => i.productId !== productId) };
+            return {
+              items: state.items.filter(
+                (i) => !(i.productId === productId && i.variantLabel === variantLabel)
+              ),
+            };
           }
           return {
             items: state.items.map((i) =>
-              i.productId === productId ? { ...i, quantity: Math.min(quantity, i.stock) } : i
+              i.productId === productId && i.variantLabel === variantLabel
+                ? { ...i, quantity: Math.min(quantity, i.stock) }
+                : i
             ),
           };
         }),

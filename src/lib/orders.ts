@@ -13,7 +13,7 @@ export type NewOrderInput = {
   postcode?: string;
   address: string;
   notes?: string;
-  items: { productId: number; quantity: number }[];
+  items: { productId: number; quantity: number; variantId?: number }[];
 };
 
 function normPhone(raw: string) {
@@ -39,13 +39,32 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
       );
       const product = (rows as { id: number; name: string; price: number; sale_price: number | null; stock: number }[])[0];
       if (!product) throw new Error(`Product ${it.productId} not found`);
-      if (product.stock < it.quantity) {
+
+      let unitPrice = product.sale_price ?? product.price;
+      let productName = product.name;
+      let variantId: number | null = null;
+
+      if (it.variantId) {
+        const [vRows] = await conn.execute(
+          "SELECT id, label, price, stock FROM product_variants WHERE id = ? AND product_id = ? FOR UPDATE",
+          [it.variantId, it.productId]
+        );
+        const variant = (vRows as { id: number; label: string; price: number; stock: number }[])[0];
+        if (!variant) throw new Error(`Variant ${it.variantId} not found`);
+        if (variant.stock < it.quantity) {
+          throw new Error(`"${product.name} ${variant.label}" এর জন্য পর্যাপ্ত স্টক নেই (আছে: ${variant.stock})`);
+        }
+        unitPrice = variant.price;
+        productName = `${product.name} (${variant.label})`;
+        variantId = variant.id;
+      } else if (product.stock < it.quantity) {
         throw new Error(`"${product.name}" এর জন্য পর্যাপ্ত স্টক নেই (আছে: ${product.stock})`);
       }
-      const unitPrice = product.sale_price ?? product.price;
+
       lineItems.push({
         product_id: product.id,
-        product_name: product.name,
+        variant_id: variantId,
+        product_name: productName,
         unit_price: unitPrice,
         quantity: it.quantity,
         line_total: unitPrice * it.quantity,
@@ -82,7 +101,11 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
          VALUES (?, ?, ?, ?, ?, ?)`,
         [orderId, li.product_id, li.product_name, li.unit_price, li.quantity, li.line_total]
       );
-      await conn.execute("UPDATE products SET stock = stock - ? WHERE id = ?", [li.quantity, li.product_id]);
+      if (li.variant_id) {
+        await conn.execute("UPDATE product_variants SET stock = stock - ? WHERE id = ?", [li.quantity, li.variant_id]);
+      } else {
+        await conn.execute("UPDATE products SET stock = stock - ? WHERE id = ?", [li.quantity, li.product_id]);
+      }
     }
 
     await conn.commit();

@@ -9,6 +9,7 @@ import type { Product } from "@/lib/types";
 import { useCartStore } from "@/lib/cart-store";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import AddToCartButton, { addProductToCart } from "./AddToCartButton";
+import QuickViewModal from "./QuickViewModal";
 
 export default function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const outOfStock = product.stock <= 0;
 
@@ -33,7 +35,7 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+    <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
       <Link href={`/product/${product.slug}`} className="block relative aspect-square bg-gray-50">
         <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 640px) 50vw, 25vw" />
         {onSale && discountPct > 0 && (
@@ -51,6 +53,17 @@ export default function ProductCard({ product }: { product: Product }) {
           className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
         >
           <HeartIcon filled={mounted && wishlisted} />
+        </button>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setQuickViewOpen(true);
+          }}
+          aria-label="দ্রুত দেখুন"
+          className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <EyeIcon />
         </button>
       </Link>
       <div className="p-3 flex flex-col gap-2 flex-1">
@@ -78,7 +91,19 @@ export default function ProductCard({ product }: { product: Product }) {
           <AddToCartButton product={product} iconOnly />
         </div>
       </div>
+      {quickViewOpen && (
+        <QuickViewModal slug={product.slug} onClose={() => setQuickViewOpen(false)} />
+      )}
     </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 

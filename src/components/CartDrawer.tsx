@@ -70,18 +70,21 @@ export default function CartDrawer() {
                     <Image src={item.image} alt={item.name} fill className="object-cover" sizes="64px" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{item.name}</div>
+                    <div className="font-medium truncate">
+                      {item.name}
+                      {item.variantLabel && <span className="text-gray-500 font-normal"> ({item.variantLabel})</span>}
+                    </div>
                     <div className="text-brand-orange font-semibold text-sm">{formatTaka(item.price)}</div>
                     <div className="flex items-center gap-2 mt-1">
                       <button
-                        onClick={() => setQuantity(item.productId, item.quantity - 1)}
+                        onClick={() => setQuantity(item.productId, item.quantity - 1, item.variantLabel)}
                         className="h-6 w-6 rounded border border-gray-300 flex items-center justify-center text-sm"
                       >
                         −
                       </button>
                       <span className="w-5 text-center text-sm">{item.quantity}</span>
                       <button
-                        onClick={() => setQuantity(item.productId, item.quantity + 1)}
+                        onClick={() => setQuantity(item.productId, item.quantity + 1, item.variantLabel)}
                         disabled={item.quantity >= item.stock}
                         className="h-6 w-6 rounded border border-gray-300 flex items-center justify-center text-sm disabled:opacity-40"
                       >
@@ -90,7 +93,7 @@ export default function CartDrawer() {
                     </div>
                   </div>
                   <button
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.productId, item.variantLabel)}
                     aria-label="সরিয়ে ফেলুন"
                     className="text-red-500 hover:text-red-600 p-2 shrink-0"
                   >

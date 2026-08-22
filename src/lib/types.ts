@@ -136,4 +136,6 @@ export type CartItem = {
   image: string;
   quantity: number;
   stock: number;
+  variantLabel?: string;
+  variantId?: number;
 };

@@ -14,7 +14,7 @@ const bodySchema = z.object({
   address: z.string().min(3, "বিস্তারিত ঠিকানা দিন"),
   notes: z.string().optional(),
   items: z
-    .array(z.object({ productId: z.number(), quantity: z.number().min(1) }))
+    .array(z.object({ productId: z.number(), quantity: z.number().min(1), variantId: z.number().optional() }))
     .min(1, "কার্ট খালি"),
 });
 
