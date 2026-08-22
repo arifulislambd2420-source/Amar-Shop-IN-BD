@@ -24,6 +24,7 @@ export type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
 
 export type Order = {
   id: number;
+  order_token: string | null;
   customer_name: string;
   phone: string;
   email: string | null;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatTaka } from "@/lib/format";
 import type { Order, OrderStatus } from "@/lib/types";
 
@@ -32,6 +33,7 @@ export default function OrdersAdmin({ initialOrders }: { initialOrders: Order[] 
               <th className="py-2 px-4">Total</th>
               <th className="py-2 px-4">Status</th>
               <th className="py-2 px-4">Date</th>
+              <th className="py-2 px-4">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -54,11 +56,15 @@ export default function OrdersAdmin({ initialOrders }: { initialOrders: Order[] 
                   </select>
                 </td>
                 <td className="py-2 px-4 text-gray-500">{o.created_at}</td>
+                <td className="py-2 px-4 whitespace-nowrap">
+                  <Link href={`/admin/orders/${o.id}/edit`} className="text-brand-navy hover:underline mr-3">Edit</Link>
+                  <Link href={`/admin/orders/${o.id}/invoice`} className="text-brand-navy hover:underline">Invoice</Link>
+                </td>
               </tr>
             ))}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-4 text-center text-gray-400">কোনো অর্ডার নেই</td>
+                <td colSpan={8} className="py-4 text-center text-gray-400">কোনো অর্ডার নেই</td>
               </tr>
             )}
           </tbody>

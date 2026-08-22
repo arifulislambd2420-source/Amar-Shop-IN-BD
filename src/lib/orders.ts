@@ -195,6 +195,66 @@ export async function updateOrderStatus(orderId: number, status: OrderStatus): P
   await db.execute("UPDATE orders SET status = ? WHERE id = ?", [status, orderId]);
 }
 
+export type OrderItemInput = {
+  product_id: number | null;
+  product_name: string;
+  unit_price: number;
+  quantity: number;
+  discount: number;
+};
+
+export type OrderUpdateInput = {
+  customer_name: string;
+  phone: string;
+  address: string;
+  shipping_fee: number;
+  discount: number;
+  items: OrderItemInput[];
+};
+
+/**
+ * Edits an already-placed order's recorded data (customer info, totals, line
+ * items). Deletes and re-inserts order_items inside a transaction — the
+ * simplest correct way to replace the set. Does NOT touch product/variant
+ * stock; that deduction only happens once, at createOrder() time.
+ */
+export async function updateOrderWithItems(orderId: number, input: OrderUpdateInput): Promise<void> {
+  const pool = await getDb();
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const subtotal = input.items.reduce(
+      (s, li) => s + (li.unit_price * li.quantity - li.discount),
+      0
+    );
+    const total = subtotal + input.shipping_fee - input.discount;
+
+    await conn.execute(
+      `UPDATE orders SET customer_name = ?, phone = ?, address = ?, shipping_fee = ?, discount = ?, subtotal = ?, total = ? WHERE id = ?`,
+      [input.customer_name, normPhone(input.phone), input.address, input.shipping_fee, input.discount, subtotal, total, orderId]
+    );
+
+    await conn.execute("DELETE FROM order_items WHERE order_id = ?", [orderId]);
+
+    for (const li of input.items) {
+      const lineTotal = li.unit_price * li.quantity - li.discount;
+      await conn.execute(
+        `INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity, line_total, discount)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [orderId, li.product_id, li.product_name, li.unit_price, li.quantity, lineTotal, li.discount]
+      );
+    }
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 export async function dashboardStats() {
   const db = await getDb();
   const [[{ c: totalOrders }]] = (await db.query("SELECT COUNT(*) c FROM orders")) as [{ c: number }[], unknown];

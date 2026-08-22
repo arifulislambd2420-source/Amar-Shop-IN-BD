@@ -4,7 +4,7 @@ import LogoutButton from "@/components/admin/LogoutButton";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-56 bg-brand-navy text-white flex flex-col shrink-0">
+      <aside className="w-56 bg-brand-navy text-white flex flex-col shrink-0 print:hidden">
         <div className="px-5 py-5 text-lg font-bold border-b border-white/10">
           আমার<span className="text-brand-orange">শপ</span> Admin
         </div>
@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <LogoutButton />
         </div>
       </aside>
-      <main className="flex-1 p-6 md:p-8 overflow-x-auto">{children}</main>
+      <main className="flex-1 p-6 md:p-8 overflow-x-auto print:p-0">{children}</main>
     </div>
   );
 }
