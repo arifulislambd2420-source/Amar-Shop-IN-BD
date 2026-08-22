@@ -70,10 +70,10 @@ export default function Header() {
             </Link>
           ))}
           <div className="ml-auto flex items-center gap-4">
-            <Link href="/login" className="hover:text-brand-orange">
+            <Link href="/customer/login" className="hover:text-brand-orange">
               Login
             </Link>
-            <Link href="/register" className="hover:text-brand-orange">
+            <Link href="/customer/register" className="hover:text-brand-orange">
               Sign Up
             </Link>
           </div>

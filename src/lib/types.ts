@@ -118,6 +118,13 @@ export type IpBlock = {
   created_at: string;
 };
 
+export type User = {
+  id: number;
+  name: string;
+  phone: string;
+  created_at: string;
+};
+
 export type ContactMessage = {
   id: number;
   name: string;
