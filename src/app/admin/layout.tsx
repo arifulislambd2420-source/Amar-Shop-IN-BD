@@ -17,6 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-white/40">⚙️ Site Setting</div>
           <AdminLink href="/admin/settings/fraud-api">&nbsp;&nbsp;Fraud API</AdminLink>
           <AdminLink href="/admin/settings/smtp">&nbsp;&nbsp;Mail SMTP</AdminLink>
+          <AdminLink href="/admin/gtm">🔖 G. Pixel and GTM</AdminLink>
           <AdminLink href="/admin/ip-block">🚫 IP Block</AdminLink>
           <AdminLink href="/admin/banners">🖼️ Banner & Ads</AdminLink>
           <AdminLink href="/admin/blogs">📝 Blogs</AdminLink>

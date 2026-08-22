@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import FloatingButtons from "@/components/FloatingButtons";
 import CartDrawer from "@/components/CartDrawer";
+import { GtmScript, GtmNoScript } from "@/components/GtmScript";
+import { getActiveGtmId } from "@/lib/gtm";
 
 const hindSiliguri = Hind_Siliguri({
   subsets: ["bengali", "latin"],
@@ -18,16 +20,22 @@ export const metadata: Metadata = {
   description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// gtm_id সেটিং request-time-এ DB থেকে পড়ি, তাই build-এ static prerender করা যাবে না।
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const gtmId = await getActiveGtmId();
   return (
     <html lang="bn" className={`h-full antialiased ${hindSiliguri.variable}`}>
       <body className="min-h-full flex flex-col has-mobile-nav">
+        {gtmId && <GtmNoScript gtmId={gtmId} />}
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
         <MobileNav />
         <FloatingButtons />
         <CartDrawer />
+        {gtmId && <GtmScript gtmId={gtmId} />}
       </body>
     </html>
   );
