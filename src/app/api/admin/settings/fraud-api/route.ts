@@ -10,10 +10,17 @@ const fraudConfigSchema = z.object({
   active: z.number().int().min(0).max(1),
 });
 
+const API_KEY_PLACEHOLDER = "********";
+
 export async function GET() {
   const user = await getSessionUsername();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json({ configs: await listFraudConfigs() });
+  const configs = await listFraudConfigs();
+  const masked = configs.map((c) => ({
+    ...c,
+    api_key: c.api_key ? API_KEY_PLACEHOLDER : "",
+  }));
+  return NextResponse.json({ configs: masked });
 }
 
 export async function PUT(req: NextRequest) {
@@ -28,7 +35,16 @@ export async function PUT(req: NextRequest) {
     );
   }
   try {
-    await upsertFraudConfig(parsed.data);
+    if (parsed.data.api_key === API_KEY_PLACEHOLDER) {
+      const existing = (await listFraudConfigs()).find((c) => c.type === parsed.data.type);
+      if (existing) {
+        await upsertFraudConfig({ ...parsed.data, api_key: existing.api_key });
+      } else {
+        return NextResponse.json({ error: "API Key দিন" }, { status: 400 });
+      }
+    } else {
+      await upsertFraudConfig(parsed.data);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "সংরক্ষণ করা যায়নি";
     return NextResponse.json({ error: message }, { status: 400 });

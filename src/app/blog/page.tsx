@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listBlogs } from "@/lib/blogs";
 
+export const dynamic = "force-dynamic";
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("bn-BD", { year: "numeric", month: "long", day: "numeric" });
 }

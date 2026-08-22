@@ -2,6 +2,8 @@ import { listProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const SORTS = [
   { value: "", label: "নতুন" },
   { value: "price_asc", label: "কম দাম আগে" },

@@ -1,6 +1,8 @@
 import { listBrands } from "@/lib/products";
 import BrandGrid from "./BrandGrid";
 
+export const dynamic = "force-dynamic";
+
 export default async function BrandsPage() {
   const brands = await listBrands();
 

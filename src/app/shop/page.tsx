@@ -2,6 +2,8 @@ import { listProducts, listCategories, searchProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function ShopPage({
   searchParams,
 }: {
