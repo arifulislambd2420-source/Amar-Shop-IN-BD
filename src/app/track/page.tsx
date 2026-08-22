@@ -11,6 +11,55 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+const HAPPY_PATH: { key: "pending" | "processing" | "completed"; label: string }[] = [
+  { key: "pending", label: "Pending" },
+  { key: "processing", label: "Processing" },
+  { key: "completed", label: "Completed" },
+];
+
+function StatusTimeline({ status }: { status: string }) {
+  if (status === "cancelled") {
+    return (
+      <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+        <span className="h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0">✕</span>
+        <div>
+          <div className="font-semibold text-red-600">Cancelled</div>
+          <p className="text-xs text-red-500">এই অর্ডারটি বাতিল করা হয়েছে</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentIndex = HAPPY_PATH.findIndex((s) => s.key === status);
+
+  return (
+    <div className="flex items-center mb-5">
+      {HAPPY_PATH.map((step, i) => {
+        const reached = i <= currentIndex;
+        return (
+          <div key={step.key} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  reached ? "bg-brand-orange text-white" : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {reached ? "✓" : i + 1}
+              </div>
+              <span className={`text-xs ${reached ? "text-brand-orange font-medium" : "text-gray-400"}`}>
+                {step.label}
+              </span>
+            </div>
+            {i < HAPPY_PATH.length - 1 && (
+              <div className={`flex-1 h-0.5 mx-2 ${i < currentIndex ? "bg-brand-orange" : "bg-gray-200"}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TrackPage() {
   const [orderId, setOrderId] = useState("");
   const [phone, setPhone] = useState("");
@@ -76,12 +125,13 @@ export default function TrackPage() {
 
       {result && (
         <div className="border border-gray-200 rounded-xl p-5">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-4">
             <div className="font-semibold">Order #{result.order.id}</div>
             <span className="text-xs font-semibold bg-brand-orange/10 text-brand-orange px-2 py-1 rounded">
               {STATUS_LABEL[result.order.status] || result.order.status}
             </span>
           </div>
+          <StatusTimeline status={result.order.status} />
           <div className="flex flex-col gap-2 mb-3">
             {result.items.map((it) => (
               <div key={it.id} className="flex justify-between text-sm">
