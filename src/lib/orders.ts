@@ -220,6 +220,7 @@ export async function dashboardStats() {
   const [[{ c: uniqueCustomers }]] = (await db.query(
     "SELECT COUNT(DISTINCT phone) c FROM orders"
   )) as [{ c: number }[], unknown];
+  const [[{ c: registeredUsers }]] = (await db.query("SELECT COUNT(*) c FROM users")) as [{ c: number }[], unknown];
 
   return {
     totalOrders,
@@ -230,5 +231,24 @@ export async function dashboardStats() {
     totalSales,
     completedOrders,
     uniqueCustomers,
+    registeredUsers,
   };
+}
+
+export type OrderWithProductSummary = Order & { productSummary: string };
+
+export async function listOrdersWithProductSummary(limit = 10): Promise<OrderWithProductSummary[]> {
+  const orders = await listOrders(limit);
+  const withItems = await Promise.all(
+    orders.map(async (o) => {
+      const items = await getOrderItems(o.id);
+      const productSummary = items.length
+        ? items.length === 1
+          ? items[0].product_name
+          : `${items[0].product_name} +${items.length - 1} more`
+        : "-";
+      return { ...o, productSummary };
+    })
+  );
+  return withItems;
 }
