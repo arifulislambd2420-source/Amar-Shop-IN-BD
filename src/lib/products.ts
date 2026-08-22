@@ -22,6 +22,7 @@ export async function listProducts(
     categoryId?: number;
     brandId?: number;
     onlyActive?: boolean;
+    onlyDiscounted?: boolean;
     sort?: ProductSort;
     page?: number;
     pageSize?: number;
@@ -31,6 +32,7 @@ export async function listProducts(
   let sql = `SELECT p.* FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1=1`;
   const params: (string | number)[] = [];
   if (opts.onlyActive) sql += ` AND p.is_active = 1`;
+  if (opts.onlyDiscounted) sql += ` AND p.sale_price IS NOT NULL AND p.sale_price < p.price`;
   if (opts.categorySlug) {
     sql += ` AND c.slug = ?`;
     params.push(opts.categorySlug);
