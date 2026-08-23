@@ -211,6 +211,9 @@ async function initSchema(pool: mysql.Pool) {
   await ensureColumn(pool, "orders", "invoice_no", "ALTER TABLE orders ADD COLUMN invoice_no VARCHAR(50) UNIQUE");
   await ensureColumn(pool, "orders", "shipping_fee", "ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0");
   await ensureColumn(pool, "orders", "discount", "ALTER TABLE orders ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
+  await ensureColumn(pool, "orders", "consignment_id", "ALTER TABLE orders ADD COLUMN consignment_id VARCHAR(100)");
+  await ensureColumn(pool, "orders", "tracking_code", "ALTER TABLE orders ADD COLUMN tracking_code VARCHAR(100)");
+  await ensureColumn(pool, "orders", "courier_status", "ALTER TABLE orders ADD COLUMN courier_status VARCHAR(50)");
   await ensureColumn(pool, "order_items", "discount", "ALTER TABLE order_items ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
 
   // Phase 1 PIM columns on products

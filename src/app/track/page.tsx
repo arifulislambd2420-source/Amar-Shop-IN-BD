@@ -6,15 +6,18 @@ import type { Order, OrderItem } from "@/lib/types";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pending",
-  processing: "Processing",
+  processing: "Confirmed",
+  shipped: "Shipped",
+  delivered: "Delivered",
   completed: "Completed",
   cancelled: "Cancelled",
 };
 
-const HAPPY_PATH: { key: "pending" | "processing" | "completed"; label: string }[] = [
+const HAPPY_PATH: { key: string; label: string }[] = [
   { key: "pending", label: "Pending" },
-  { key: "processing", label: "Processing" },
-  { key: "completed", label: "Completed" },
+  { key: "processing", label: "Confirmed" },
+  { key: "shipped", label: "Shipped" },
+  { key: "delivered", label: "Delivered" },
 ];
 
 function StatusTimeline({ status }: { status: string }) {

@@ -38,7 +38,7 @@ export type Category = {
   icon: string | null;
 };
 
-export type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
+export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "completed" | "cancelled";
 
 export type Order = {
   id: number;
@@ -58,6 +58,9 @@ export type Order = {
   shipping_fee: number;
   discount: number;
   notes: string;
+  consignment_id: string | null;
+  tracking_code: string | null;
+  courier_status: string | null;
   created_at: string;
 };
 

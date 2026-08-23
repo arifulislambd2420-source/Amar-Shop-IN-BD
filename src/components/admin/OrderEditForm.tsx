@@ -124,9 +124,50 @@ export default function OrderEditForm({
     }
   }
 
+  const [sendingToCourier, setSendingToCourier] = useState(false);
+
+  async function handleSendToSteadfast() {
+    if (!confirm("আপনি কি নিশ্চিত যে এই অর্ডারটি Steadfast Courier এ পাঠাতে চান?")) return;
+    setSendingToCourier(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/steadfast`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send to Steadfast");
+        return;
+      }
+      alert(`Successfully sent! Tracking Code: ${data.tracking_code}`);
+      router.refresh();
+    } catch {
+      setError("Network error while sending to Steadfast");
+    } finally {
+      setSendingToCourier(false);
+    }
+  }
+
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">অর্ডার এডিট #{order.id}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+        <h1 className="text-2xl font-bold">অর্ডার এডিট #{order.id}</h1>
+        {!order.consignment_id && (
+          <button
+            type="button"
+            onClick={handleSendToSteadfast}
+            disabled={sendingToCourier}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
+          >
+            {sendingToCourier ? "Sending..." : "🚀 Send to Steadfast"}
+          </button>
+        )}
+        {order.consignment_id && (
+          <span className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-lg text-sm font-medium">
+            Steadfast ID: {order.consignment_id} ({order.courier_status})
+          </span>
+        )}
+      </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
         <label className="block text-sm text-gray-600 mb-1">আরও একটি পণ্য যোগ করুন</label>

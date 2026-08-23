@@ -482,7 +482,7 @@ export default function ProductsAdmin({
       )}
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[1000px]">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-200">
               <th className="py-2 px-3">

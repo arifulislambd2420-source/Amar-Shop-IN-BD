@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatTaka } from "@/lib/format";
 import type { Order, OrderStatus } from "@/lib/types";
 
-const STATUSES: OrderStatus[] = ["pending", "processing", "completed", "cancelled"];
+const STATUSES: OrderStatus[] = ["pending", "processing", "shipped", "delivered", "completed", "cancelled"];
 
 export default function OrdersAdmin({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState(initialOrders);
@@ -23,7 +23,7 @@ export default function OrdersAdmin({ initialOrders }: { initialOrders: Order[] 
     <div>
       <h1 className="text-2xl font-bold mb-6">🧾 Orders</h1>
       <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[800px]">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-200">
               <th className="py-2 px-4">#</th>
