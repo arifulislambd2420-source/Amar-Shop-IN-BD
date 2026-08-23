@@ -168,3 +168,31 @@ export type CartItem = {
   variantLabel?: string;
   variantId?: number;
 };
+
+export type Coupon = {
+  id: number;
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: number;
+  min_spend: number;
+  uses: number;
+  max_uses: number | null;
+  valid_until: string | null;
+  is_active: number;
+  created_at: string;
+};
+
+export type FlashSale = {
+  id: number;
+  title: string;
+  end_time: string;
+  is_active: number;
+  created_at: string;
+};
+
+export type FlashSaleItem = {
+  id: number;
+  flash_sale_id: number;
+  product_id: number;
+  flash_price: number;
+};

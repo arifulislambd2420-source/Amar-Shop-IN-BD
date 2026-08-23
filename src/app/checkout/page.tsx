@@ -13,7 +13,11 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [coupon, setCoupon] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
+
   const [form, setForm] = useState({
     customer_name: "",
     phone: "",
@@ -42,18 +46,47 @@ export default function CheckoutPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  async function handleApplyCoupon() {
+    setCouponError("");
+    setCouponSuccess("");
+    if (!couponCode) return;
+
+    try {
+      const res = await fetch("/api/cart/apply-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode, cartSubtotal: subtotal() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponError(data.error || "কুপন যাচাই করা যায়নি");
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon(data);
+        setCouponSuccess("কুপন সফলভাবে প্রয়োগ করা হয়েছে!");
+      }
+    } catch {
+      setCouponError("নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন");
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
     try {
+      const payload: any = {
+        ...form,
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
+      };
+      if (appliedCoupon) {
+        payload.couponCode = appliedCoupon.code;
+      }
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -167,12 +200,34 @@ export default function CheckoutPage() {
 
           <div className="border border-gray-200 rounded-lg p-4">
             <div className="font-medium mb-2">কুপন কোড (ঐচ্ছিক)</div>
-            <input
-              value={coupon}
-              onChange={(e) => setCoupon(e.target.value)}
-              placeholder="কুপন কোড দিন"
-              className="input"
-            />
+            <div className="flex gap-2">
+              <input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="কুপন কোড দিন"
+                className="input flex-1"
+                disabled={!!appliedCoupon}
+              />
+              {!appliedCoupon ? (
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  className="bg-gray-800 text-white px-4 rounded-lg text-sm font-medium hover:bg-gray-700"
+                >
+                  প্রয়োগ করুন
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setAppliedCoupon(null); setCouponCode(""); setCouponSuccess(""); }}
+                  className="bg-red-500 text-white px-4 rounded-lg text-sm font-medium hover:bg-red-600"
+                >
+                  বাতিল
+                </button>
+              )}
+            </div>
+            {couponError && <p className="text-red-500 text-sm mt-2">{couponError}</p>}
+            {couponSuccess && <p className="text-green-600 text-sm mt-2">{couponSuccess}</p>}
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -206,11 +261,11 @@ export default function CheckoutPage() {
           </div>
           <div className="flex justify-between text-sm mb-2">
             <span className="text-gray-600">ডিসকাউন্ট</span>
-            <span className="font-semibold">{formatTaka(0)}</span>
+            <span className="font-semibold text-green-600">-{formatTaka(appliedCoupon?.discount_amount || 0)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
             <span>মোট</span>
-            <span className="text-brand-orange">{formatTaka(subtotal() + SHIPPING_FEE)}</span>
+            <span className="text-brand-orange">{formatTaka(Math.max(0, subtotal() + SHIPPING_FEE - (appliedCoupon?.discount_amount || 0)))}</span>
           </div>
         </div>
       </div>

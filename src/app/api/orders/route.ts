@@ -13,6 +13,7 @@ const bodySchema = z.object({
   postcode: z.string().optional(),
   address: z.string().min(3, "বিস্তারিত ঠিকানা দিন"),
   notes: z.string().optional(),
+  couponCode: z.string().optional(),
   items: z
     .array(z.object({ productId: z.number(), quantity: z.number().min(1), variantId: z.number().optional() }))
     .min(1, "কার্ট খালি"),

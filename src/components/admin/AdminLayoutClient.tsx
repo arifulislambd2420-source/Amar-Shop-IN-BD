@@ -57,6 +57,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
           <AdminLink href="/admin/products/import" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Import/Export</AdminLink>
           <AdminLink href="/admin/reviews" onClick={() => setSidebarOpen(false)}>⭐ Reviews</AdminLink>
           <AdminLink href="/admin/users" onClick={() => setSidebarOpen(false)}>👥 Users</AdminLink>
+          <AdminLink href="/admin/coupons" onClick={() => setSidebarOpen(false)}>🎟️ Coupons</AdminLink>
+          <AdminLink href="/admin/flash-sales" onClick={() => setSidebarOpen(false)}>⚡ Flash Sales</AdminLink>
           <div className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-white/40">⚙️ Site Setting</div>
           <AdminLink href="/admin/settings/courier" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Courier API</AdminLink>
           <AdminLink href="/admin/settings/fraud-api" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Fraud API</AdminLink>

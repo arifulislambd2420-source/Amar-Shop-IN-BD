@@ -2,9 +2,11 @@ import Link from "next/link";
 import { featuredProducts, listCategories, listProducts, listBrands } from "@/lib/products";
 import { listBlogs } from "@/lib/blogs";
 import { getBanners } from "@/lib/banners";
+import { getActiveFlashSale } from "@/lib/marketing";
 import ProductCard from "@/components/ProductCard";
 import HeroSlider from "@/components/HeroSlider";
 import PromoBanner from "@/components/PromoBanner";
+import FlashSaleBanner from "@/components/FlashSaleBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,7 @@ const CATEGORY_ICON_FALLBACK = "🛍️";
 const SECTION_CATEGORIES = ["honey", "mustard-oil"];
 
 export default async function HomePage() {
-  const [categories, products, heroBanners, sideBanners, promoBanners, discounted, brands, blogs] =
+  const [categories, products, heroBanners, sideBanners, promoBanners, discounted, brands, blogs, activeFlashSale] =
     await Promise.all([
       listCategories(),
       featuredProducts(8),
@@ -23,6 +25,7 @@ export default async function HomePage() {
       listProducts({ onlyActive: true, onlyDiscounted: true, pageSize: 8, page: 1 }),
       listBrands(),
       listBlogs(),
+      getActiveFlashSale(),
     ]);
 
   const sectionProducts = await Promise.all(
@@ -67,6 +70,8 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {activeFlashSale && <FlashSaleBanner flashSale={activeFlashSale} />}
 
       {discounted.length > 0 && (
         <section className="container-x py-8">

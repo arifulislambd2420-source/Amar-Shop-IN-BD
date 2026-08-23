@@ -205,6 +205,42 @@ async function initSchema(pool: mysql.Pool) {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS coupons (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      discount_type VARCHAR(20) NOT NULL DEFAULT 'percent',
+      discount_value DECIMAL(10,2) NOT NULL,
+      min_spend DECIMAL(10,2) NOT NULL DEFAULT 0,
+      uses INT NOT NULL DEFAULT 0,
+      max_uses INT,
+      valid_until DATETIME,
+      is_active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flash_sales (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      end_time DATETIME NOT NULL,
+      is_active TINYINT(1) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flash_sale_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      flash_sale_id INT NOT NULL,
+      product_id INT NOT NULL,
+      flash_price DECIMAL(10,2) NOT NULL,
+      FOREIGN KEY (flash_sale_id) REFERENCES flash_sales(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
   // Defensive ALTERs for columns added after initial release (MySQL lacks ADD COLUMN IF NOT EXISTS pre-8.0.29)
   await ensureColumn(pool, "categories", "icon", "ALTER TABLE categories ADD COLUMN icon VARCHAR(255)");
   await ensureColumn(pool, "products", "brand_id", "ALTER TABLE products ADD COLUMN brand_id INT REFERENCES brands(id)");

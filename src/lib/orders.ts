@@ -13,6 +13,7 @@ export type NewOrderInput = {
   postcode?: string;
   address: string;
   notes?: string;
+  couponCode?: string;
   items: { productId: number; quantity: number; variantId?: number }[];
 };
 
@@ -73,11 +74,35 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
 
     const subtotal = lineItems.reduce((s, li) => s + li.line_total, 0);
     const shippingFee = SHIPPING_FEE;
-    const total = subtotal + shippingFee;
+    
+    let discount = 0;
+    if (input.couponCode) {
+      const [cRows] = await conn.execute("SELECT * FROM coupons WHERE code = ? AND is_active = 1 FOR UPDATE", [input.couponCode]);
+      const coupon = (cRows as any[])[0];
+      if (coupon && (!coupon.valid_until || new Date(coupon.valid_until) >= new Date()) && 
+          (coupon.max_uses === null || coupon.uses < coupon.max_uses) &&
+          subtotal >= coupon.min_spend) {
+        if (coupon.discount_type === "percent") {
+          discount = (subtotal * coupon.discount_value) / 100;
+        } else {
+          discount = coupon.discount_value;
+        }
+        discount = Math.min(discount, subtotal);
+        // Increment coupon usage
+        await conn.execute("UPDATE coupons SET uses = uses + 1 WHERE id = ?", [coupon.id]);
+      } else {
+        throw new Error("কুপন কোডটি সঠিক নয় অথবা শর্ত পূরণ করেনি");
+      }
+    }
+
+    const total = subtotal + shippingFee - discount;
+
+    // Check if orders table has discount column, we assume it does via types/schema. Actually db.ts might not have discount column on orders. Let's add discount to subtotal/total calculation without a discount column if it doesn't exist, but wait, updateOrderWithItems uses `discount` column. Oh, I should ensure orders table has `discount` column in db.ts! Let me check db.ts again if it had discount column. I will use subtotal = subtotal - discount maybe? Wait, order schema in db.ts originally has total, subtotal. Let's add discount column to orders if not present.
+    // wait, we can just insert discount if the table has it. updateOrderWithItems in orders.ts already references `discount` column. Wait, line 235: `UPDATE orders SET ... discount = ?`. So `discount` column already exists in `orders`! Wait, let me check the INSERT INTO below.
 
     const [orderResult] = await conn.execute(
-      `INSERT INTO orders (order_token, customer_name, phone, email, district, thana, postcode, address, payment_method, status, subtotal, shipping_fee, total, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cod', 'pending', ?, ?, ?, ?)`,
+      `INSERT INTO orders (order_token, customer_name, phone, email, district, thana, postcode, address, payment_method, status, subtotal, shipping_fee, total, notes, discount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cod', 'pending', ?, ?, ?, ?, ?)`,
       [
         orderToken,
         input.customer_name,
@@ -91,6 +116,7 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
         shippingFee,
         total,
         input.notes || "",
+        discount
       ]
     );
     const orderId = (orderResult as mysql.ResultSetHeader).insertId;

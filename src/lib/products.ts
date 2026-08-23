@@ -509,3 +509,26 @@ export async function reorderProductImages(productId: number, orderedIds: number
     conn.release();
   }
 }
+
+export type Review = {
+  id: number;
+  product_id: number;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  approved: number;
+  created_at: string;
+};
+
+export async function getProductReviews(productId: number, approvedOnly = true): Promise<Review[]> {
+  const db = await getDb();
+  let sql = "SELECT * FROM reviews WHERE product_id = ?";
+  const params: any[] = [productId];
+  if (approvedOnly) {
+    sql += " AND approved = 1";
+  }
+  sql += " ORDER BY created_at DESC";
+  const [rows] = await db.execute(sql, params);
+  return rows as Review[];
+}
+
