@@ -309,17 +309,23 @@ export async function dashboardStats() {
   };
 }
 
-export async function topSellingProducts(limit = 5): Promise<{ name: string; qty: number; revenue: number }[]> {
+export async function topSellingProducts(
+  limit = 5,
+  from?: string,
+  to?: string
+): Promise<{ name: string; qty: number; revenue: number }[]> {
   const db = await getDb();
+  const rangeSql = from && to ? "AND DATE(o.created_at) BETWEEN ? AND ?" : "";
+  const params: (string | number)[] = from && to ? [from, to, limit] : [limit];
   const [rows] = await db.query(
     `SELECT oi.product_name name, SUM(oi.quantity) qty, SUM(oi.line_total) revenue
      FROM order_items oi
      JOIN orders o ON o.id = oi.order_id
-     WHERE o.status <> 'cancelled'
+     WHERE o.status <> 'cancelled' ${rangeSql}
      GROUP BY oi.product_name
      ORDER BY qty DESC
      LIMIT ?`,
-    [limit]
+    params
   );
   return (rows as { name: string; qty: number; revenue: number }[]).map((r) => ({
     name: r.name,
@@ -328,17 +334,24 @@ export async function topSellingProducts(limit = 5): Promise<{ name: string; qty
   }));
 }
 
-export async function dailySales(from: string, to: string): Promise<{ date: string; total: number; orders: number }[]> {
+export type SalesGranularity = "daily" | "weekly" | "monthly";
+
+export async function salesSeries(
+  from: string,
+  to: string,
+  granularity: SalesGranularity
+): Promise<{ date: string; total: number; orders: number }[]> {
   const db = await getDb();
+  const fmt = granularity === "monthly" ? "%Y-%m" : granularity === "weekly" ? "%x-W%v" : "%Y-%m-%d";
   const [rows] = await db.query(
-    `SELECT DATE_FORMAT(created_at, '%Y-%m-%d') date,
+    `SELECT DATE_FORMAT(created_at, ?) date,
             COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total END),0) total,
             COUNT(*) orders
      FROM orders
      WHERE DATE(created_at) BETWEEN ? AND ?
-     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
-     ORDER BY date ASC`,
-    [from, to]
+     GROUP BY date
+     ORDER BY MIN(created_at) ASC`,
+    [fmt, from, to]
   );
   return (rows as { date: string; total: number; orders: number }[]).map((r) => ({
     date: r.date,
@@ -368,8 +381,16 @@ export async function salesReport(from: string, to: string) {
 
 export type OrderWithProductSummary = Order & { productSummary: string };
 
-export async function listOrdersWithProductSummary(limit = 10): Promise<OrderWithProductSummary[]> {
-  const orders = await listOrders(limit);
+export async function listOrdersWithProductSummary(
+  limit = 10,
+  from?: string,
+  to?: string
+): Promise<OrderWithProductSummary[]> {
+  const db = await getDb();
+  const rangeSql = from && to ? "WHERE DATE(created_at) BETWEEN ? AND ?" : "";
+  const params: (string | number)[] = from && to ? [from, to, limit] : [limit];
+  const [rows] = await db.query(`SELECT * FROM orders ${rangeSql} ORDER BY created_at DESC LIMIT ?`, params);
+  const orders = rows as Order[];
   const withItems = await Promise.all(
     orders.map(async (o) => {
       const items = await getOrderItems(o.id);
