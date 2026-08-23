@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LiveEditable from "@/components/editor/LiveEditable";
 import { featuredProducts, listCategories, listProducts, listBrands } from "@/lib/products";
 import { listBlogs } from "@/lib/blogs";
 import { getBanners } from "@/lib/banners";
@@ -56,7 +57,7 @@ export default async function HomePage() {
       </section>
 
       <section className="container-x py-8">
-        <h2 className="text-xl font-bold mb-4">ক্যাটাগরি</h2>
+        <LiveEditable pageKey="home" sectionKey="categories" elementKey="title" as="h2" className="text-xl font-bold mb-4" fallback="ক্যাটাগরি" />
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
           {categories.map((c) => (
             <Link

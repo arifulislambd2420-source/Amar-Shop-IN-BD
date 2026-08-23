@@ -8,6 +8,7 @@ import FloatingButtons from "@/components/FloatingButtons";
 import CartDrawer from "@/components/CartDrawer";
 import { GtmScript, GtmNoScript } from "@/components/GtmScript";
 import { getActiveGtmId } from "@/lib/gtm";
+import AdminEditorInjector from "@/components/editor/AdminEditorInjector";
 
 const hindSiliguri = Hind_Siliguri({
   subsets: ["bengali", "latin"],
@@ -29,12 +30,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="bn" className={`h-full antialiased ${hindSiliguri.variable}`}>
       <body className="min-h-full flex flex-col has-mobile-nav">
         {gtmId && <GtmNoScript gtmId={gtmId} />}
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <MobileNav />
-        <FloatingButtons />
-        <CartDrawer />
+        <AdminEditorInjector>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <MobileNav />
+          <FloatingButtons />
+          <CartDrawer />
+        </AdminEditorInjector>
         {gtmId && <GtmScript gtmId={gtmId} />}
       </body>
     </html>

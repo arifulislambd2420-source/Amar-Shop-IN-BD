@@ -241,7 +241,49 @@ async function initSchema(pool: mysql.Pool) {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS page_contents (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      page_key VARCHAR(100) NOT NULL,
+      section_key VARCHAR(100) NOT NULL,
+      element_key VARCHAR(100) NOT NULL,
+      content_type VARCHAR(50) NOT NULL DEFAULT 'text',
+      content_value TEXT,
+      settings_json JSON,
+      is_published TINYINT(1) NOT NULL DEFAULT 0,
+      version INT NOT NULL DEFAULT 1,
+      updated_by VARCHAR(255),
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY idx_page_section_element (page_key, section_key, element_key)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS content_revisions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      content_id INT NOT NULL,
+      content_value TEXT,
+      settings_json JSON,
+      version INT NOT NULL,
+      changed_by VARCHAR(255),
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (content_id) REFERENCES page_contents(id) ON DELETE CASCADE
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS media_library (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      file_name VARCHAR(255) NOT NULL,
+      file_path VARCHAR(500) NOT NULL,
+      mime_type VARCHAR(100),
+      file_size INT,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Defensive ALTERs for columns added after initial release (MySQL lacks ADD COLUMN IF NOT EXISTS pre-8.0.29)
+  await ensureColumn(pool, "admin_users", "role", "ALTER TABLE admin_users ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'super_admin'");
   await ensureColumn(pool, "categories", "icon", "ALTER TABLE categories ADD COLUMN icon VARCHAR(255)");
   await ensureColumn(pool, "products", "brand_id", "ALTER TABLE products ADD COLUMN brand_id INT REFERENCES brands(id)");
   await ensureColumn(pool, "orders", "invoice_no", "ALTER TABLE orders ADD COLUMN invoice_no VARCHAR(50) UNIQUE");
