@@ -1,11 +1,18 @@
 import ProductsAdmin from "@/components/admin/ProductsAdmin";
-import { listProducts, listCategories, listBrands } from "@/lib/products";
+import { listProductsAdmin, listCategories, listBrands } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage() {
-  const products = await listProducts();
+  const { rows, total } = await listProductsAdmin({ page: 1, pageSize: 20 });
   const categories = await listCategories();
   const brands = await listBrands();
-  return <ProductsAdmin initialProducts={products} categories={categories} brands={brands} />;
+  return (
+    <ProductsAdmin
+      initialProducts={rows}
+      initialTotal={total}
+      categories={categories}
+      brands={brands}
+    />
+  );
 }

@@ -107,6 +107,17 @@ async function initSchema(pool: mysql.Pool) {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_images (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      product_id INT NOT NULL,
+      url VARCHAR(500) NOT NULL,
+      alt VARCHAR(255),
+      sort_order INT NOT NULL DEFAULT 0,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
   // rating 1-5; CHECK constraints are enforced from MySQL 8.0.16+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS reviews (
@@ -202,11 +213,27 @@ async function initSchema(pool: mysql.Pool) {
   await ensureColumn(pool, "orders", "discount", "ALTER TABLE orders ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
   await ensureColumn(pool, "order_items", "discount", "ALTER TABLE order_items ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
 
+  // Phase 1 PIM columns on products
+  await ensureColumn(pool, "products", "sku", "ALTER TABLE products ADD COLUMN sku VARCHAR(64)");
+  await ensureColumn(pool, "products", "status", "ALTER TABLE products ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'published'");
+  await ensureColumn(pool, "products", "cost_price", "ALTER TABLE products ADD COLUMN cost_price DECIMAL(10,2)");
+  await ensureColumn(pool, "products", "seo_title", "ALTER TABLE products ADD COLUMN seo_title VARCHAR(255)");
+  await ensureColumn(pool, "products", "meta_description", "ALTER TABLE products ADD COLUMN meta_description VARCHAR(500)");
+  await ensureColumn(pool, "products", "tags", "ALTER TABLE products ADD COLUMN tags VARCHAR(500)");
+  await ensureColumn(pool, "products", "updated_at", "ALTER TABLE products ADD COLUMN updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+  await ensureColumn(pool, "products", "deleted_at", "ALTER TABLE products ADD COLUMN deleted_at TIMESTAMP NULL");
+
   await ensureIndex(pool, "orders", "idx_orders_phone", "CREATE INDEX idx_orders_phone ON orders(phone)");
   await ensureIndex(pool, "orders", "idx_orders_token", "CREATE INDEX idx_orders_token ON orders(order_token)");
   await ensureIndex(pool, "products", "idx_products_category", "CREATE INDEX idx_products_category ON products(category_id)");
   await ensureIndex(pool, "products", "idx_products_brand", "CREATE INDEX idx_products_brand ON products(brand_id)");
   await ensureIndex(pool, "product_variants", "idx_variants_product", "CREATE INDEX idx_variants_product ON product_variants(product_id)");
+  // UNIQUE on sku: MySQL allows multiple NULLs, so blank SKUs don't collide
+  await ensureIndex(pool, "products", "idx_products_sku", "CREATE UNIQUE INDEX idx_products_sku ON products(sku)");
+  await ensureIndex(pool, "products", "idx_products_status", "CREATE INDEX idx_products_status ON products(status)");
+  await ensureIndex(pool, "products", "idx_products_updated", "CREATE INDEX idx_products_updated ON products(updated_at)");
+  await ensureIndex(pool, "products", "idx_products_deleted", "CREATE INDEX idx_products_deleted ON products(deleted_at)");
+  await ensureIndex(pool, "product_images", "idx_product_images_product", "CREATE INDEX idx_product_images_product ON product_images(product_id)");
   await ensureIndex(pool, "reviews", "idx_reviews_product", "CREATE INDEX idx_reviews_product ON reviews(product_id)");
   await ensureIndex(pool, "reviews", "idx_reviews_approved", "CREATE INDEX idx_reviews_approved ON reviews(approved)");
 

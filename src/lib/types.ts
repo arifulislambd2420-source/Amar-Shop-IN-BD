@@ -10,8 +10,26 @@ export type Product = {
   brand_id: number | null;
   stock: number;
   is_active: number;
+  sku: string | null;
+  status: string;
+  cost_price: number | null;
+  seo_title: string | null;
+  meta_description: string | null;
+  tags: string | null;
   created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 };
+
+export type ProductImage = {
+  id: number;
+  product_id: number;
+  url: string;
+  alt: string | null;
+  sort_order: number;
+};
+
+export type ProductStatus = "draft" | "published" | "hidden" | "outofstock" | "archived";
 
 export type Category = {
   id: number;

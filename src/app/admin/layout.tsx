@@ -12,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminLink href="/admin">📊 Dashboard</AdminLink>
           <AdminLink href="/admin/orders">🧾 Orders</AdminLink>
           <AdminLink href="/admin/products">📦 Products</AdminLink>
+          <AdminLink href="/admin/products/import">&nbsp;&nbsp;Import/Export</AdminLink>
           <AdminLink href="/admin/reviews">⭐ Reviews</AdminLink>
           <AdminLink href="/admin/users">👥 Users</AdminLink>
           <div className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-white/40">⚙️ Site Setting</div>
