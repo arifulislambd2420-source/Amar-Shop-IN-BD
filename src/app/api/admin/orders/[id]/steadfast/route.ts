@@ -3,9 +3,10 @@ import { getDb } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import type { Order } from "@/lib/types";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const orderId = parseInt(params.id, 10);
+    const { id } = await params;
+    const orderId = parseInt(id, 10);
     if (isNaN(orderId)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
     const db = await getDb();
