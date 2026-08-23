@@ -257,42 +257,94 @@ export async function updateOrderWithItems(orderId: number, input: OrderUpdateIn
 
 export async function dashboardStats() {
   const db = await getDb();
-  const [[{ c: totalOrders }]] = (await db.query("SELECT COUNT(*) c FROM orders")) as [{ c: number }[], unknown];
-  const [[{ c: todayOrders }]] = (await db.query(
-    "SELECT COUNT(*) c FROM orders WHERE DATE(created_at) = CURDATE()"
-  )) as [{ c: number }[], unknown];
-  const [[{ c: totalProducts }]] = (await db.query(
-    "SELECT COUNT(*) c FROM products WHERE is_active = 1"
-  )) as [{ c: number }[], unknown];
-  const [[{ s: totalStock }]] = (await db.query("SELECT COALESCE(SUM(stock),0) s FROM products")) as [
-    { s: number }[],
+
+  // All order metrics in one pass (SUM over a boolean counts matching rows).
+  const [[o]] = (await db.query(
+    `SELECT
+       COUNT(*) totalOrders,
+       COALESCE(SUM(DATE(created_at) = CURDATE()),0) todayOrders,
+       COALESCE(SUM(status = 'pending'),0) pendingOrders,
+       COALESCE(SUM(status = 'processing'),0) processingOrders,
+       COALESCE(SUM(status = 'completed'),0) completedOrders,
+       COALESCE(SUM(status = 'cancelled'),0) cancelledOrders,
+       COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total END),0) totalSales,
+       COALESCE(SUM(CASE WHEN status <> 'cancelled' AND DATE(created_at) = CURDATE() THEN total END),0) todaySales,
+       COALESCE(SUM(CASE WHEN status <> 'cancelled' AND YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) THEN total END),0) monthSales,
+       COUNT(DISTINCT phone) uniqueCustomers
+     FROM orders`
+  )) as [Record<string, number>[], unknown];
+
+  const [[p]] = (await db.query(
+    `SELECT
+       COALESCE(SUM(is_active = 1),0) totalProducts,
+       COALESCE(SUM(stock),0) totalStock,
+       COALESCE(SUM(price * stock),0) stockValue,
+       COALESCE(SUM(is_active = 1 AND stock > 0),0) inStockProducts,
+       COALESCE(SUM(is_active = 1 AND stock = 0),0) outOfStockProducts
+     FROM products`
+  )) as [Record<string, number>[], unknown];
+
+  const [[{ registeredUsers }]] = (await db.query("SELECT COUNT(*) registeredUsers FROM users")) as [
+    { registeredUsers: number }[],
     unknown
   ];
-  const [[{ v: stockValue }]] = (await db.query(
-    "SELECT COALESCE(SUM(price * stock),0) v FROM products"
-  )) as [{ v: number }[], unknown];
-  const [[{ v: totalSales }]] = (await db.query(
-    "SELECT COALESCE(SUM(total),0) v FROM orders WHERE status != 'cancelled'"
-  )) as [{ v: number }[], unknown];
-  const [[{ c: completedOrders }]] = (await db.query(
-    "SELECT COUNT(*) c FROM orders WHERE status = 'completed'"
-  )) as [{ c: number }[], unknown];
-  const [[{ c: uniqueCustomers }]] = (await db.query(
-    "SELECT COUNT(DISTINCT phone) c FROM orders"
-  )) as [{ c: number }[], unknown];
-  const [[{ c: registeredUsers }]] = (await db.query("SELECT COUNT(*) c FROM users")) as [{ c: number }[], unknown];
 
   return {
-    totalOrders,
-    todayOrders,
-    totalProducts,
-    totalStock,
-    stockValue,
-    totalSales,
-    completedOrders,
-    uniqueCustomers,
-    registeredUsers,
+    totalOrders: Number(o.totalOrders),
+    todayOrders: Number(o.todayOrders),
+    pendingOrders: Number(o.pendingOrders),
+    processingOrders: Number(o.processingOrders),
+    completedOrders: Number(o.completedOrders),
+    cancelledOrders: Number(o.cancelledOrders),
+    totalSales: Number(o.totalSales),
+    todaySales: Number(o.todaySales),
+    monthSales: Number(o.monthSales),
+    uniqueCustomers: Number(o.uniqueCustomers),
+    totalProducts: Number(p.totalProducts),
+    totalStock: Number(p.totalStock),
+    stockValue: Number(p.stockValue),
+    inStockProducts: Number(p.inStockProducts),
+    outOfStockProducts: Number(p.outOfStockProducts),
+    registeredUsers: Number(registeredUsers),
   };
+}
+
+export async function topSellingProducts(limit = 5): Promise<{ name: string; qty: number; revenue: number }[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT oi.product_name name, SUM(oi.quantity) qty, SUM(oi.line_total) revenue
+     FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     WHERE o.status <> 'cancelled'
+     GROUP BY oi.product_name
+     ORDER BY qty DESC
+     LIMIT ?`,
+    [limit]
+  );
+  return (rows as { name: string; qty: number; revenue: number }[]).map((r) => ({
+    name: r.name,
+    qty: Number(r.qty),
+    revenue: Number(r.revenue),
+  }));
+}
+
+export async function dailySales(from: string, to: string): Promise<{ date: string; total: number; orders: number }[]> {
+  const db = await getDb();
+  const [rows] = await db.query(
+    `SELECT DATE_FORMAT(created_at, '%Y-%m-%d') date,
+            COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total END),0) total,
+            COUNT(*) orders
+     FROM orders
+     WHERE DATE(created_at) BETWEEN ? AND ?
+     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
+     ORDER BY date ASC`,
+    [from, to]
+  );
+  return (rows as { date: string; total: number; orders: number }[]).map((r) => ({
+    date: r.date,
+    total: Number(r.total),
+    orders: Number(r.orders),
+  }));
 }
 
 export async function salesReport(from: string, to: string) {
