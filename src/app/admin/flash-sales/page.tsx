@@ -52,8 +52,8 @@ export default function AdminFlashSalesPage() {
       id: fs.id,
       title: fs.title,
       end_time: fs.end_time ? new Date(fs.end_time).toISOString().slice(0, 16) : "",
-      is_active: fs.is_active,
-      items: fs.items?.map((i) => ({ product_id: i.product_id, flash_price: i.flash_price.toString(), product_name: (i as any).product_name })) || [],
+      is_active: Boolean(fs.is_active),
+      items: fs.items?.map((i: any) => ({ product_id: i.product_id, flash_price: i.flash_price.toString(), product_name: i.product_name })) || [],
     });
     setShowModal(true);
   }

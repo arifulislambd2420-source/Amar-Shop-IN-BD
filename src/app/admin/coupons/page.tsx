@@ -45,7 +45,7 @@ export default function AdminCouponsPage() {
       min_spend: coupon.min_spend.toString(),
       max_uses: coupon.max_uses?.toString() || "",
       valid_until: coupon.valid_until ? new Date(coupon.valid_until).toISOString().slice(0, 16) : "",
-      is_active: coupon.is_active,
+      is_active: Boolean(coupon.is_active),
     });
     setShowModal(true);
   }

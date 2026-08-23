@@ -188,6 +188,7 @@ export type FlashSale = {
   end_time: string;
   is_active: number;
   created_at: string;
+  items?: FlashSaleItem[];
 };
 
 export type FlashSaleItem = {
