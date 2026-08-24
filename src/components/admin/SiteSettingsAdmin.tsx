@@ -6,12 +6,15 @@ import ImageUploader from "./ImageUploader";
 export default function SiteSettingsAdmin({
   initialLogo,
   initialName,
+  initialFavicon,
 }: {
   initialLogo: string;
   initialName: string;
+  initialFavicon: string;
 }) {
   const [logo, setLogo] = useState(initialLogo);
   const [name, setName] = useState(initialName);
+  const [favicon, setFavicon] = useState(initialFavicon);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -25,7 +28,7 @@ export default function SiteSettingsAdmin({
       const res = await fetch("/api/admin/settings/site", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ site_logo: logo, site_name: name }),
+        body: JSON.stringify({ site_logo: logo, site_name: name, site_favicon: favicon }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.error || "সংরক্ষণ করা যায়নি");
@@ -53,6 +56,13 @@ export default function SiteSettingsAdmin({
           <span className="font-medium text-gray-700">Site Logo</span>
           <ImageUploader value={logo} onChange={setLogo} />
           <span className="text-xs text-gray-400">PNG/SVG recommended, transparent background, ~200×60.</span>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-gray-700">Favicon (browser tab icon)</span>
+          <ImageUploader value={favicon} onChange={setFavicon} />
+          <span className="text-xs text-gray-400">
+            ছোট বর্গাকার ছবি (PNG/ICO, ~32×32 বা 64×64)। খালি রাখলে logo বা ডিফল্ট favicon ব্যবহার হবে।
+          </span>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-gray-700">Site Name (logo না থাকলে দেখাবে)</span>

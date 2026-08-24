@@ -20,7 +20,9 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  const favicon = (await getSetting("site_favicon"))?.trim();
   const logo = (await getSetting("site_logo"))?.trim();
+  const iconUrl = favicon || logo;
   return {
     title: {
       default: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
@@ -28,8 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://online.amarshopinbd.com"),
-    // Uploaded logo becomes the favicon when set; otherwise the default favicon.ico applies.
-    ...(logo ? { icons: { icon: logo } } : {}),
+    // Uploaded favicon (or logo) becomes the tab icon; otherwise the default favicon.ico applies.
+    ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
     openGraph: {
       title: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
       description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",

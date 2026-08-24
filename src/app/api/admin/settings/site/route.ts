@@ -3,11 +3,12 @@ import { z } from "zod";
 import { getSessionUsername } from "@/lib/auth";
 import { getSettings, setSetting } from "@/lib/settings";
 
-const SITE_KEYS = ["site_logo", "site_name"];
+const SITE_KEYS = ["site_logo", "site_name", "site_favicon"];
 
 const schema = z.object({
   site_logo: z.string().optional().nullable(),
   site_name: z.string().optional().nullable(),
+  site_favicon: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -25,6 +26,7 @@ export async function PUT(req: NextRequest) {
   try {
     if (parsed.data.site_logo !== undefined) await setSetting("site_logo", parsed.data.site_logo || "");
     if (parsed.data.site_name !== undefined) await setSetting("site_name", parsed.data.site_name || "");
+    if (parsed.data.site_favicon !== undefined) await setSetting("site_favicon", parsed.data.site_favicon || "");
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "সংরক্ষণ করা যায়নি" }, { status: 400 });
