@@ -67,6 +67,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
     { href: "/admin/orders", label: "Orders", icon: ShoppingCart, hasArrow: true },
     { href: "/admin/products", label: "Products", icon: Package, hasArrow: true },
+    { href: "/admin/categories", label: "Categories", icon: BookOpen, hasArrow: true },
     { href: "/admin/settings/courier", label: "Dropshipping", icon: Truck, hasArrow: true },
     { href: "/admin/reviews", label: "Reviews", icon: Star, hasArrow: true },
     { href: "/admin/banners", label: "Landing Page", icon: Monitor, hasArrow: true },

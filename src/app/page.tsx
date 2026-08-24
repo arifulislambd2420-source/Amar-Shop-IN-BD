@@ -58,17 +58,25 @@ export default async function HomePage() {
 
       <section className="container-x py-8">
         <LiveEditable pageKey="home" sectionKey="categories" elementKey="title" as="h2" className="text-xl font-bold mb-4" fallback="ক্যাটাগরি" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/shop?category=${c.slug}`}
-              className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 text-center font-medium hover:border-brand-orange hover:text-brand-orange transition-colors"
-            >
-              <span className="text-2xl">{c.icon || CATEGORY_ICON_FALLBACK}</span>
-              <span className="text-sm">{c.name}</span>
-            </Link>
-          ))}
+        <div className="flex gap-4 overflow-x-auto pb-2 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {categories.map((c) => {
+            const isImg = !!c.icon && /^(https?:\/\/|\/)/.test(c.icon);
+            return (
+              <Link
+                key={c.id}
+                href={`/shop?category=${c.slug}`}
+                className="snap-start shrink-0 w-28 sm:w-32 bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 text-center font-medium hover:border-brand-orange hover:text-brand-orange transition-colors"
+              >
+                {isImg ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.icon!} alt={c.name} className="h-10 w-10 object-contain" />
+                ) : (
+                  <span className="text-2xl">{c.icon || CATEGORY_ICON_FALLBACK}</span>
+                )}
+                <span className="text-sm truncate w-full">{c.name}</span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
