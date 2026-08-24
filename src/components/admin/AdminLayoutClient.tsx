@@ -82,6 +82,11 @@ export default function AdminLayoutClient({ children, logo }: { children: React.
     { href: "/admin/settings/smtp", label: "Help Center", icon: HelpCircle, hasArrow: false },
   ];
 
+  // The login page is its own full-screen view — no admin sidebar/header chrome.
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen flex bg-[#f4f6f9] font-sans antialiased text-gray-800">
       {/* Mobile Sidebar Overlay */}
