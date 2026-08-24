@@ -18,8 +18,19 @@ export default function ImageUploader({
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     setError("");
+    if (!file.type.startsWith("image/")) {
+      setError("শুধু image ফাইল আপলোড করা যাবে।");
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setError(`ফাইল ${MAX_MB}MB এর কম হতে হবে।`);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setUploading(true);
 
     const formData = new FormData();

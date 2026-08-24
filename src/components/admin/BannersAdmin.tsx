@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Banner } from "@/lib/types";
+import ImageUploader from "./ImageUploader";
 
 type FormState = {
   id?: number;
@@ -55,6 +56,10 @@ export default function BannersAdmin({ initialBanners }: { initialBanners: Banne
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!form.image.trim()) {
+      setError("একটি banner image আপলোড করুন বা URL দিন।");
+      return;
+    }
     setSaving(true);
     const payload = {
       image: form.image,
@@ -112,9 +117,12 @@ export default function BannersAdmin({ initialBanners }: { initialBanners: Banne
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
           <form onSubmit={handleSave} className="grid md:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium text-gray-700">Image path *</span>
-              <input required value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="input" />
+            <label className="flex flex-col gap-1 text-sm md:col-span-2">
+              <span className="font-medium text-gray-700">Banner Image *</span>
+              <ImageUploader value={form.image} onChange={(url) => setForm({ ...form, image: url })} />
+              <span className="text-xs text-gray-400">
+                Recommended ~1200×525 (16:7). Upload a file, or paste a direct image URL.
+              </span>
             </label>
             <label className="flex flex-col gap-1 text-sm">
               <span className="font-medium text-gray-700">Link</span>
