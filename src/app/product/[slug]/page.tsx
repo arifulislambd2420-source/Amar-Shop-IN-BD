@@ -4,6 +4,7 @@ import { formatTaka } from "@/lib/format";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import AddToCartButton from "@/components/AddToCartButton";
+import ViewItemTracker from "@/components/ViewItemTracker";
 import ProductReviews from "@/components/ProductReviews";
 import ProductCard from "@/components/ProductCard";
 
@@ -32,7 +33,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product || !product.is_active) notFound();
 
   const reviews = await getProductReviews(product.id, true);
-  
+  const trackPrice = Number(product.sale_price ?? product.price);
+
   // Fetch similar products (same category, excluding current product)
   const similarProductsResult = await listProducts({
     categoryId: product.category_id || undefined,
@@ -46,6 +48,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="container-x py-8">
+      <ViewItemTracker id={product.id} name={product.name} price={trackPrice} />
       <div className="grid md:grid-cols-2 gap-8">
         <div className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden">
           <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority />

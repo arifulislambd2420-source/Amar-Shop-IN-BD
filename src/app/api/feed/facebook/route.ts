@@ -18,7 +18,7 @@ export async function GET() {
     
     const products = rows as (Product & { category_name?: string })[];
     
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://amarshopbd.com";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://online.amarshopinbd.com";
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">

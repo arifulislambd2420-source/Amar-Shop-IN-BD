@@ -18,6 +18,25 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
+
+  useEffect(() => {
+    if (mounted && items.length > 0) {
+      pushToDataLayer("begin_checkout", {
+        ecommerce: {
+          currency: "BDT",
+          value: subtotal(),
+          items: items.map((i) => ({
+            item_id: i.productId,
+            item_name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+          })),
+        },
+      });
+    }
+    // fire once when the page becomes ready
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance" | "bkash" | "sslcommerz">("cod");
 
   const [form, setForm] = useState({

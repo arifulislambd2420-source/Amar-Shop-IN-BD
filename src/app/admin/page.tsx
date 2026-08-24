@@ -9,6 +9,7 @@ import {
 import { getLatestCustomers } from "@/lib/users";
 import { formatTaka } from "@/lib/format";
 import SalesChart from "@/components/admin/SalesChart";
+import FeedUrlCopy from "@/components/admin/FeedUrlCopy";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -295,6 +296,7 @@ export default async function AdminDashboardPage({
 
   return (
     <div className="space-y-8">
+      <FeedUrlCopy />
       {/* 1. Top 12 Stat Cards Grid (4 columns × 3 rows) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((c) => {
