@@ -122,9 +122,9 @@ export default async function HomePage() {
 
       <section className="container-x py-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">সব পণ্য</h2>
+          <LiveEditable pageKey="home" sectionKey="all-products" elementKey="title" as="h2" className="text-xl font-bold" fallback="সব পণ্য" />
           <Link href="/shop" className="text-brand-orange text-sm font-medium">
-            সব দেখুন →
+            <LiveEditable pageKey="home" sectionKey="all-products" elementKey="view-all" as="span" fallback="সব দেখুন →" />
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -136,7 +136,7 @@ export default async function HomePage() {
 
       {brands.length > 0 && (
         <section className="container-x py-8">
-          <h2 className="text-xl font-bold mb-4">ব্র্যান্ডসমূহ</h2>
+          <LiveEditable pageKey="home" sectionKey="brands" elementKey="title" as="h2" className="text-xl font-bold mb-4" fallback="ব্র্যান্ডসমূহ" />
           <div className="flex flex-wrap items-center gap-6 bg-white border border-gray-200 rounded-xl p-6">
             {brands.map((b) =>
               b.logo ? (

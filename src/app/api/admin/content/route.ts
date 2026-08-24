@@ -4,6 +4,9 @@ import { getSessionUsername } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
+    if (!(await getSessionUsername())) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const pageKey = searchParams.get("pageKey");
     
