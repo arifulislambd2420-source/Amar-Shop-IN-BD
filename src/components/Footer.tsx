@@ -1,13 +1,20 @@
 import Link from "next/link";
 import { SITE_CONFIG } from "@/lib/site-config";
 
-export default function Footer() {
+export default function Footer({ logo }: { logo?: string | null }) {
   return (
     <footer className="bg-brand-navy text-white/80 mt-16">
       <div className="container-x py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div>
           <div className="text-white text-lg font-bold mb-2">
-            আমার<span className="text-brand-orange">শপ</span>
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo} alt="আমারশপ" className="h-9 w-auto object-contain bg-white/95 rounded px-1.5 py-1" />
+            ) : (
+              <>
+                আমার<span className="text-brand-orange">শপ</span>
+              </>
+            )}
           </div>
           <p>খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান। মধু, সরিষার তেল, ঘি, খেজুর — সরাসরি আপনার দোরগোড়ায়।</p>
           <div className="flex items-center gap-3 mt-4">

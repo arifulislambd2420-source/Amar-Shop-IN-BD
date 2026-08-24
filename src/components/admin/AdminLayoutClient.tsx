@@ -30,7 +30,7 @@ import {
   Sparkles
 } from "lucide-react";
 
-export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+export default function AdminLayoutClient({ children, logo }: { children: React.ReactNode; logo?: string | null }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
 
   const settingItems = [
     { href: "/admin/settings", label: "General Setting Pro", icon: Sliders, hasArrow: true },
-    { href: "/admin/settings", label: "Site Setting", icon: Settings, hasArrow: true },
+    { href: "/admin/settings/site", label: "Site Setting", icon: Settings, hasArrow: true },
     { href: "/admin/banners", label: "Banner & Ads", icon: ImageIcon, hasArrow: true },
     { href: "/admin/blogs", label: "Blogs", icon: BookOpen, hasArrow: true },
     { href: "/admin/settings/smtp", label: "Help Center", icon: HelpCircle, hasArrow: false },
@@ -104,9 +104,14 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         {/* Brand / Logo */}
         <div className="h-16 px-5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
           <Link href="/admin" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white shadow-sm shadow-orange-500/20 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5" />
-            </div>
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo} alt="Logo" className="h-9 w-auto object-contain" />
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white shadow-sm shadow-orange-500/20 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-5 h-5" />
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-gray-900 leading-none">
                 আমার<span className="text-orange-500">শপ</span>

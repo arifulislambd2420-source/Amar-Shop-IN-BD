@@ -19,7 +19,7 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-export default function Header({ isAdmin }: { isAdmin?: boolean }) {
+export default function Header({ isAdmin, logo }: { isAdmin?: boolean; logo?: string | null }) {
   const cartCount = useCartStore((s) => s.count());
   const wishlistCount = useWishlistStore((s) => s.count());
   const [mounted, setMounted] = useState(false);
@@ -39,7 +39,14 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
         </button>
 
         <Link href="/" className="text-xl font-bold tracking-tight shrink-0">
-          আমার<span className="text-brand-orange">শপ</span>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="আমারশপ" className="h-8 w-auto object-contain" />
+          ) : (
+            <>
+              আমার<span className="text-brand-orange">শপ</span>
+            </>
+          )}
         </Link>
 
         <div className="hidden md:block flex-1 max-w-xl">
@@ -74,6 +81,7 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         isAdmin={isAdmin}
+        logo={logo}
       />
 
       <nav className="hidden md:block border-t border-gray-100 bg-white">
@@ -338,10 +346,12 @@ function MobileDrawer({
   isOpen,
   onClose,
   isAdmin,
+  logo,
 }: {
   isOpen: boolean;
   onClose: () => void;
   isAdmin?: boolean;
+  logo?: string | null;
 }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [catOpen, setCatOpen] = useState(true);
@@ -376,7 +386,14 @@ function MobileDrawer({
         {/* Drawer Header */}
         <div className="p-4 bg-brand-navy text-white flex items-center justify-between">
           <Link href="/" onClick={onClose} className="text-xl font-bold tracking-tight">
-            আমার<span className="text-brand-orange">শপ</span>
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo} alt="আমারশপ" className="h-8 w-auto object-contain bg-white rounded px-1" />
+            ) : (
+              <>
+                আমার<span className="text-brand-orange">শপ</span>
+              </>
+            )}
           </Link>
           <button
             onClick={onClose}

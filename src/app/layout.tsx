@@ -9,6 +9,7 @@ import CartDrawer from "@/components/CartDrawer";
 import { GtmScript, GtmNoScript } from "@/components/GtmScript";
 import { getActiveGtmId } from "@/lib/gtm";
 import { getSessionUsername } from "@/lib/auth";
+import { getSetting } from "@/lib/settings";
 import AdminEditorInjector from "@/components/editor/AdminEditorInjector";
 import ChatbotScript from "@/components/ChatbotScript";
 
@@ -18,21 +19,26 @@ const hindSiliguri = Hind_Siliguri({
   variable: "--font-hind-siliguri",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
-    template: "%s | আমারশপ",
-  },
-  description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://online.amarshopinbd.com"),
-  openGraph: {
-    title: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
+export async function generateMetadata(): Promise<Metadata> {
+  const logo = (await getSetting("site_logo"))?.trim();
+  return {
+    title: {
+      default: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
+      template: "%s | আমারশপ",
+    },
     description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
-    siteName: "আমারশপ",
-    locale: "bn_BD",
-    type: "website",
-  },
-};
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://online.amarshopinbd.com"),
+    // Uploaded logo becomes the favicon when set; otherwise the default favicon.ico applies.
+    ...(logo ? { icons: { icon: logo } } : {}),
+    openGraph: {
+      title: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
+      description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
+      siteName: "আমারশপ",
+      locale: "bn_BD",
+      type: "website",
+    },
+  };
+}
 
 // gtm_id সেটিং request-time-এ DB থেকে পড়ি, তাই build-এ static prerender করা যাবে না।
 export const dynamic = "force-dynamic";
@@ -41,15 +47,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const gtmId = await getActiveGtmId();
   const username = await getSessionUsername();
   const isAdmin = !!username;
+  const logo = (await getSetting("site_logo"))?.trim() || null;
 
   return (
     <html lang="bn" className={`h-full antialiased ${hindSiliguri.variable}`}>
       <body className="min-h-full flex flex-col has-mobile-nav">
         {gtmId && <GtmNoScript gtmId={gtmId} />}
         <AdminEditorInjector>
-          <Header isAdmin={isAdmin} />
+          <Header isAdmin={isAdmin} logo={logo} />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <Footer logo={logo} />
           <MobileNav />
           <FloatingButtons />
           <CartDrawer />

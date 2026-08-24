@@ -11,7 +11,7 @@ const COMPANY = {
   phone: "+৮৮০ ১৭০০-০০০০০০",
 };
 
-export default function InvoiceView({ order, items }: { order: Order; items: OrderItem[] }) {
+export default function InvoiceView({ order, items, logo }: { order: Order; items: OrderItem[]; logo?: string | null }) {
   const invoiceId = order.invoice_no || order.order_token?.slice(0, 10).toUpperCase() || String(order.id);
 
   return (
@@ -29,9 +29,14 @@ export default function InvoiceView({ order, items }: { order: Order; items: Ord
       <div className="bg-white border border-gray-200 rounded-xl p-8 print:border-0 print:rounded-none print:p-0">
         <div className="flex justify-between items-start border-b border-gray-200 pb-4 mb-4">
           <div>
-            <div className="text-xl font-bold">
-              আমার<span className="text-brand-orange">শপ</span>
-            </div>
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo} alt={COMPANY.name} className="h-10 w-auto object-contain" />
+            ) : (
+              <div className="text-xl font-bold">
+                আমার<span className="text-brand-orange">শপ</span>
+              </div>
+            )}
             <div className="text-2xl font-bold mt-2">INVOICE</div>
           </div>
           <div className="text-right text-sm text-gray-600">
