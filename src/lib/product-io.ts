@@ -232,7 +232,7 @@ function slugify(s: string): string {
 }
 
 function parseNumber(raw: string): number | null {
-  const s = raw.replace(/,/g, "").trim();
+  const s = raw.replace(/[^0-9.-]/g, "");
   if (s === "") return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
@@ -334,7 +334,10 @@ async function buildPlan(csvText: string, mapping: ColumnMapping, mode: ImportMo
     for (let c = 0; c < headers.length; c++) {
       const field = colField[c];
       if (!field) continue;
-      raw[field] = (cells[c] ?? "").trim();
+      const val = (cells[c] ?? "").trim();
+      if (val !== "" || raw[field] === undefined) {
+        raw[field] = val;
+      }
     }
 
     if (preview.length < 10) {
