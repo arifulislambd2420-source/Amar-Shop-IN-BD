@@ -19,8 +19,19 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export const metadata: Metadata = {
-  title: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
+  title: {
+    default: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
+    template: "%s | আমারশপ",
+  },
   description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://online.amarshopinbd.com"),
+  openGraph: {
+    title: "আমারশপ — খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান",
+    description: "মধু, সরিষার তেল, ঘি, খেজুর — খাঁটি ও প্রাকৃতিক পণ্য অর্ডার করুন Cash on Delivery সুবিধায়।",
+    siteName: "আমারশপ",
+    locale: "bn_BD",
+    type: "website",
+  },
 };
 
 // gtm_id সেটিং request-time-এ DB থেকে পড়ি, তাই build-এ static prerender করা যাবে না।

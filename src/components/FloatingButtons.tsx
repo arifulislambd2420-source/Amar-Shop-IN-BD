@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 
-// Configure via env: NEXT_PUBLIC_WHATSAPP_NUMBER (digits only, with country code, no +)
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "8801XXXXXXXXX";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export default function FloatingButtons() {
   const count = useCartStore((s) => s.count());
@@ -28,7 +27,7 @@ export default function FloatingButtons() {
         )}
       </button>
       <a
-        href={`https://wa.me/${WHATSAPP_NUMBER}`}
+        href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="হোয়াটসঅ্যাপে যোগাযোগ করুন"

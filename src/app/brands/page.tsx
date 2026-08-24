@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { listBrands } from "@/lib/products";
 import BrandGrid from "./BrandGrid";
+
+export const metadata: Metadata = {
+  title: "ব্র্যান্ড সমূহ — আমারশপ",
+  description: "আমাদের শীর্ষস্থানীয় ও বিশ্বস্ত ব্র্যান্ডের প্রাকৃতিক খাদ্যপণ্যসমূহ।",
+};
 
 export const dynamic = "force-dynamic";
 

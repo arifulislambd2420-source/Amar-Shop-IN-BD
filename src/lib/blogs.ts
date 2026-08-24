@@ -14,7 +14,11 @@ export async function listBlogs(): Promise<BlogListItem[]> {
 
 export async function getBlogBySlug(slug: string): Promise<Blog | undefined> {
   const db = await getDb();
-  const [rows] = await db.execute("SELECT * FROM blogs WHERE slug = ?", [slug]);
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {}
+  const [rows] = await db.execute("SELECT * FROM blogs WHERE slug = ? OR slug = ?", [slug, decoded]);
   return (rows as Blog[])[0];
 }
 

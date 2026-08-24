@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getSessionUsername } from "@/lib/auth";
-import fs from "fs/promises";
+import { v2 as cloudinary } from "cloudinary";
 import path from "path";
+
+// Configure Cloudinary from env variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 export async function POST(request: Request) {
   try {
@@ -27,20 +35,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Invalid file type" }, { status: 400 });
     }
 
-    // Save to public/uploads
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.name);
-    const safeName = path.basename(file.name, ext).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filename = `${safeName}-${uniqueSuffix}${ext}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await fs.writeFile(filepath, buffer);
-
-    const publicUrl = `/uploads/${filename}`;
+    const publicUrl = await new Promise<string>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "amarshopbd_media" },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result?.secure_url as string);
+          }
+        }
+      );
+      uploadStream.end(buffer);
+    });
 
     const db = await getDb();
     const [result] = await db.execute(

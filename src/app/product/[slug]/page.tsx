@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getProductBySlug, getProductReviews, listProducts } from "@/lib/products";
 import { formatTaka } from "@/lib/format";
 import Image from "next/image";
@@ -5,6 +6,25 @@ import { notFound } from "next/navigation";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductReviews from "@/components/ProductReviews";
 import ProductCard from "@/components/ProductCard";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) return { title: "পণ্য পাওয়া যায়নি" };
+
+  const title = product.seo_title || `${product.name} — কিনুন সেরা দামে`;
+  const description = product.meta_description || product.description?.slice(0, 160) || `${product.name} অনলাইনে অর্ডার করুন ক্যাশ অন ডেলিভারিতে।`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: product.image ? [{ url: product.image }] : undefined,
+    },
+  };
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

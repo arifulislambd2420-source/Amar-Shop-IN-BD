@@ -1,6 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBlogBySlug, listBlogs } from "@/lib/blogs";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const blog = await getBlogBySlug(slug);
+  if (!blog) return { title: "ব্লগ পোস্ট পাওয়া যায়নি" };
+
+  const title = blog.title;
+  const description = blog.content.slice(0, 160);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: blog.cover ? [{ url: blog.cover }] : undefined,
+    },
+  };
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("bn-BD", { year: "numeric", month: "long", day: "numeric" });

@@ -4,19 +4,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { z } from "zod";
 
-const SUPPORT_PHONE = "+880 1XXX-XXXXXX";
-const SUPPORT_PHONE_TEL = "+8801XXXXXXXXX";
-const SUPPORT_EMAIL = "support@amarshopinbd.example";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 const POLICY_LINKS = [
-  { href: "/policy/about", label: "About" },
-  { href: "/policy/terms", label: "Terms" },
-  { href: "/policy/privacy", label: "Privacy" },
-  { href: "/policy/procedure", label: "Procedure" },
-  { href: "/policy/delivery", label: "Delivery" },
-  { href: "/policy/return", label: "Return" },
-  { href: "/policy/payment", label: "Payment" },
-  { href: "/contact", label: "Contact" },
+  { href: "/about", label: "আমাদের সম্পর্কে" },
+  { href: "/delivery", label: "ডেলিভারি পলিসি" },
+  { href: "/returns", label: "রিটার্ন ও রিফান্ড" },
+  { href: "/privacy", label: "প্রাইভেসি পলিসি" },
+  { href: "/terms", label: "শর্তাবলী" },
+  { href: "/contact", label: "যোগাযোগ" },
 ];
 
 const formSchema = z.object({
@@ -106,8 +102,8 @@ export default function ContactPage() {
           </div>
           <div>
             <div className="font-semibold text-gray-800">কল সেন্টার</div>
-            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="text-sm text-gray-500 hover:text-brand-orange">
-              {SUPPORT_PHONE}
+            <a href={`tel:${SITE_CONFIG.supportPhoneRaw}`} className="text-sm text-gray-500 hover:text-brand-orange">
+              {SITE_CONFIG.supportPhone}
             </a>
           </div>
         </div>
@@ -117,8 +113,8 @@ export default function ContactPage() {
           </div>
           <div>
             <div className="font-semibold text-gray-800">ইমেইল সাপোর্ট</div>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm text-gray-500 hover:text-brand-orange">
-              {SUPPORT_EMAIL}
+            <a href={`mailto:${SITE_CONFIG.supportEmail}`} className="text-sm text-gray-500 hover:text-brand-orange">
+              {SITE_CONFIG.supportEmail}
             </a>
           </div>
         </div>

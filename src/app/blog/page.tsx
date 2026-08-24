@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { listBlogs } from "@/lib/blogs";
+
+export const metadata: Metadata = {
+  title: "ব্লগ ও স্বাস্থ্য পরামর্শ — আমারশপ",
+  description: "খাঁটি মধু, সরিষার তেল ও পুষ্টিকর প্রাকৃতিক খাবারের উপকারিতা এবং ব্যবহারের নিয়মাবলি।",
+};
 
 export const dynamic = "force-dynamic";
 

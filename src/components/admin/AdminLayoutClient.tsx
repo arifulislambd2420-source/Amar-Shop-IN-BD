@@ -36,42 +36,43 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-brand-navy text-white flex flex-col transform transition-transform duration-300 ease-in-out
-        md:relative md:w-56 md:translate-x-0 print:hidden
+        md:sticky md:top-0 md:h-screen md:w-60 md:translate-x-0 md:shrink-0 print:hidden shadow-xl md:shadow-none
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
       `}>
-        <div className="px-5 py-5 text-lg font-bold border-b border-white/10 flex justify-between items-center">
+        <div className="px-5 py-4 text-lg font-bold border-b border-white/10 flex justify-between items-center shrink-0">
           <div>আমার<span className="text-brand-orange">শপ</span> Admin</div>
           <button 
             className="md:hidden p-1 text-white/60 hover:text-white"
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-1 text-sm overflow-y-auto">
+        <nav className="flex-1 px-3 py-3 flex flex-col gap-0.5 text-sm overflow-y-auto overscroll-contain">
           <AdminLink href="/" onClick={() => setSidebarOpen(false)}>🌍 Live Website</AdminLink>
-          <div className="h-px bg-white/10 my-2"></div>
+          <div className="h-px bg-white/10 my-1.5"></div>
           <AdminLink href="/admin" onClick={() => setSidebarOpen(false)}>📊 Dashboard</AdminLink>
           <AdminLink href="/admin/orders" onClick={() => setSidebarOpen(false)}>🧾 Orders</AdminLink>
           <AdminLink href="/admin/products" onClick={() => setSidebarOpen(false)}>📦 Products</AdminLink>
-          <AdminLink href="/admin/products/import" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Import/Export</AdminLink>
+          <AdminLink href="/admin/products/import" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;📥 Import/Export</AdminLink>
           <AdminLink href="/admin/reviews" onClick={() => setSidebarOpen(false)}>⭐ Reviews</AdminLink>
           <AdminLink href="/admin/users" onClick={() => setSidebarOpen(false)}>👥 Users</AdminLink>
           <AdminLink href="/admin/coupons" onClick={() => setSidebarOpen(false)}>🎟️ Coupons</AdminLink>
           <AdminLink href="/admin/flash-sales" onClick={() => setSidebarOpen(false)}>⚡ Flash Sales</AdminLink>
-          <div className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-white/40">⚙️ Site Setting</div>
-          <AdminLink href="/admin/settings/courier" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Courier API</AdminLink>
-          <AdminLink href="/admin/settings/fraud-api" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Fraud API</AdminLink>
-          <AdminLink href="/admin/settings/smtp" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;Mail SMTP</AdminLink>
-          <AdminLink href="/admin/gtm" onClick={() => setSidebarOpen(false)}>🔖 G. Pixel and GTM</AdminLink>
+          <div className="px-3 pt-2.5 pb-1 text-xs uppercase tracking-wider font-bold text-brand-orange/90">⚙️ Site Settings</div>
+          <AdminLink href="/admin/settings/courier" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;🚚 Courier API</AdminLink>
+          <AdminLink href="/admin/settings/fraud-api" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;🛡️ Fraud API</AdminLink>
+          <AdminLink href="/admin/settings/smtp" onClick={() => setSidebarOpen(false)}>&nbsp;&nbsp;✉️ Mail SMTP</AdminLink>
+          <AdminLink href="/admin/gtm" onClick={() => setSidebarOpen(false)}>🔖 Pixel & GTM</AdminLink>
           <AdminLink href="/admin/ip-block" onClick={() => setSidebarOpen(false)}>🚫 IP Block</AdminLink>
           <AdminLink href="/admin/banners" onClick={() => setSidebarOpen(false)}>🖼️ Banner & Ads</AdminLink>
           <AdminLink href="/admin/blogs" onClick={() => setSidebarOpen(false)}>📝 Blogs</AdminLink>
           <AdminLink href="/admin/reports" onClick={() => setSidebarOpen(false)}>📈 Reports</AdminLink>
         </nav>
-        <div className="px-3 py-4 border-t border-white/10">
+        <div className="p-3 border-t border-white/10 shrink-0 bg-brand-navy">
           <LogoutButton />
         </div>
       </aside>

@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { SITE_CONFIG } from "@/lib/site-config";
+
 export default function Footer() {
   return (
     <footer className="bg-brand-navy text-white/80 mt-16">
@@ -8,43 +11,47 @@ export default function Footer() {
           </div>
           <p>খাঁটি ও প্রাকৃতিক পণ্যের অনলাইন দোকান। মধু, সরিষার তেল, ঘি, খেজুর — সরাসরি আপনার দোরগোড়ায়।</p>
           <div className="flex items-center gap-3 mt-4">
-            <a href="#" aria-label="Facebook" className="hover:text-brand-orange"><FacebookIcon /></a>
-            <a href="#" aria-label="YouTube" className="hover:text-brand-orange"><YoutubeIcon /></a>
-            <a href="#" aria-label="Instagram" className="hover:text-brand-orange"><InstagramIcon /></a>
+            <a href={SITE_CONFIG.social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:text-brand-orange"><FacebookIcon /></a>
+            <a href={SITE_CONFIG.social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="hover:text-brand-orange"><YoutubeIcon /></a>
+            <a href={SITE_CONFIG.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-brand-orange"><InstagramIcon /></a>
           </div>
         </div>
         <div>
-          <div className="text-white font-semibold mb-2">লিংক</div>
+          <div className="text-white font-semibold mb-2">গুরুত্বপূর্ণ লিংক</div>
           <ul className="space-y-1">
-            <li><a href="/shop" className="hover:text-brand-orange">শপ</a></li>
-            <li><a href="/blog" className="hover:text-brand-orange">ব্লগ</a></li>
-            <li><a href="/contact" className="hover:text-brand-orange">যোগাযোগ</a></li>
-            <li><a href="/track" className="hover:text-brand-orange">অর্ডার ট্র্যাকিং</a></li>
+            <li><Link href="/about" className="hover:text-brand-orange">আমাদের সম্পর্কে</Link></li>
+            <li><Link href="/shop" className="hover:text-brand-orange">সকল পণ্য (Shop)</Link></li>
+            <li><Link href="/offers" className="hover:text-brand-orange">অফার সমূহ</Link></li>
+            <li><Link href="/blog" className="hover:text-brand-orange">ব্লগ ও টিপস</Link></li>
+            <li><Link href="/track" className="hover:text-brand-orange">অর্ডার ট্র্যাকিং</Link></li>
           </ul>
         </div>
         <div>
-          <div className="text-white font-semibold mb-2">পলিসি</div>
+          <div className="text-white font-semibold mb-2">পলিসি ও নিয়মাবলী</div>
           <ul className="space-y-1">
-            <li><a href="/policy/privacy" className="hover:text-brand-orange">প্রাইভেসি পলিসি</a></li>
-            <li><a href="/policy/return" className="hover:text-brand-orange">রিটার্ন পলিসি</a></li>
-            <li><a href="/policy/terms" className="hover:text-brand-orange">শর্তাবলী</a></li>
+            <li><Link href="/delivery" className="hover:text-brand-orange">ডেলিভারি পলিসি</Link></li>
+            <li><Link href="/returns" className="hover:text-brand-orange">রিটার্ন ও রিফান্ড পলিসি</Link></li>
+            <li><Link href="/privacy" className="hover:text-brand-orange">প্রাইভেসি পলিসি</Link></li>
+            <li><Link href="/terms" className="hover:text-brand-orange">ব্যবহারের শর্তাবলী</Link></li>
+            <li><Link href="/contact" className="hover:text-brand-orange">যোগাযোগ ও হেল্পলাইন</Link></li>
           </ul>
         </div>
         <div>
           <div className="text-white font-semibold mb-2">যোগাযোগ</div>
-          <p>ফোন: 01XXXXXXXXX</p>
-          <p className="mt-1">ইমেইল: support@amarshop.com</p>
+          <p>ফোন: <a href={`tel:${SITE_CONFIG.supportPhoneRaw}`} className="hover:text-brand-orange">{SITE_CONFIG.supportPhone}</a></p>
+          <p className="mt-1">ইমেইল: <a href={`mailto:${SITE_CONFIG.supportEmail}`} className="hover:text-brand-orange">{SITE_CONFIG.supportEmail}</a></p>
+          <p className="mt-1 text-xs text-white/60">ঠিকানা: {SITE_CONFIG.address}</p>
           <div className="text-white font-semibold mt-4 mb-2">পেমেন্ট মেথড</div>
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="bg-white/10 px-2 py-1 rounded">bKash</span>
             <span className="bg-white/10 px-2 py-1 rounded">Nagad</span>
             <span className="bg-white/10 px-2 py-1 rounded">Rocket</span>
-            <span className="bg-white/10 px-2 py-1 rounded">COD</span>
+            <span className="bg-white/10 px-2 py-1 rounded">Cash on Delivery</span>
           </div>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/50">
-        &copy; {new Date().getFullYear()} আমারশপ — সব অধিকার সংরক্ষিত
+        &copy; {new Date().getFullYear()} {SITE_CONFIG.name} ({SITE_CONFIG.legalName}) — সব অধিকার সংরক্ষিত
       </div>
     </footer>
   );

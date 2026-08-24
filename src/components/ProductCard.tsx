@@ -34,10 +34,19 @@ export default function ProductCard({ product }: { product: Product }) {
     router.push("/checkout");
   }
 
+  const [imgSrc, setImgSrc] = useState(product.image || "/placeholder.svg");
+
   return (
     <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
       <Link href={`/product/${product.slug}`} className="block relative aspect-square bg-gray-50">
-        <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 640px) 50vw, 25vw" />
+        <Image
+          src={imgSrc}
+          alt={product.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 50vw, 25vw"
+          onError={() => setImgSrc("/placeholder.svg")}
+        />
         {onSale && discountPct > 0 && (
           <span className="absolute top-2 left-2 bg-brand-orange text-white text-xs font-bold px-2 py-0.5 rounded">
             -{discountPct}%

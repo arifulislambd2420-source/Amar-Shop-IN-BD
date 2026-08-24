@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { listProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "অফার ও বিশেষ মূল্যছাড় — আমারশপ",
+  description: "সেরা মূল্যে খাঁটি ও প্রাকৃতিক পণ্যের বিশেষ অফার এবং ডিসকাউন্টসমূহ।",
+};
 
 export const dynamic = "force-dynamic";
 

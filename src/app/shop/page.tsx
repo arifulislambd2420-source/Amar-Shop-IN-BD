@@ -1,8 +1,27 @@
+import type { Metadata } from "next";
 import { listProducts, listCategories, searchProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; brand?: string; q?: string }>;
+}): Promise<Metadata> {
+  const { category, q } = await searchParams;
+  if (q) return { title: `"${q}" - অনুসন্ধানের ফলাফল` };
+  if (category) {
+    const categories = await listCategories();
+    const cat = categories.find((c) => c.slug === category);
+    if (cat) return { title: `${cat.name} — কিনুন সেরা দামে` };
+  }
+  return {
+    title: "সকল পণ্য (Shop) — খাঁটি ও প্রাকৃতিক খাদ্য সামগ্রী",
+    description: "খাঁটি মধু, সরিষার তেল, ঘি, খেজুর সহ সকল প্রাকৃতিক পণ্য এক ঠিকানায়।",
+  };
+}
 
 export default async function ShopPage({
   searchParams,

@@ -77,7 +77,14 @@ export async function searchProducts(q: string, limit = 8): Promise<Product[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
   const db = await getDb();
-  const [rows] = await db.execute("SELECT * FROM products WHERE slug = ? AND deleted_at IS NULL", [slug]);
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {}
+  const [rows] = await db.execute(
+    "SELECT * FROM products WHERE (slug = ? OR slug = ?) AND deleted_at IS NULL",
+    [slug, decoded]
+  );
   return (rows as Product[])[0];
 }
 
