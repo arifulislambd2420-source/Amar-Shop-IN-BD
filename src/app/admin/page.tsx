@@ -6,21 +6,65 @@ import {
   listOrdersWithProductSummary,
   type SalesGranularity,
 } from "@/lib/orders";
+import { getLatestCustomers } from "@/lib/users";
 import { formatTaka } from "@/lib/format";
 import SalesChart from "@/components/admin/SalesChart";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  ShoppingCart,
+  ShoppingBag,
+  Layers,
+  Users,
+  Boxes,
+  CheckCircle2,
+  CircleDollarSign,
+  CreditCard,
+  Receipt,
+  TrendingUp,
+  DollarSign,
+  Truck,
+  MoreVertical,
+  ArrowRight,
+  Tag,
+  Share2,
+  Mail,
+  MessageSquare,
+  ShieldAlert,
+  Ban,
+  Copy,
+  BarChart3,
+  PackageCheck,
+  FilePlus,
+  Sliders,
+  Calendar,
+  Sparkles
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  processing: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+const STATUS_BADGE_STYLE: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800 border border-amber-200",
+  processing: "bg-blue-100 text-blue-800 border border-blue-200",
+  shipped: "bg-purple-100 text-purple-800 border border-purple-200",
+  out_for_delivery: "bg-cyan-100 text-cyan-800 border border-cyan-200",
+  delivered: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  completed: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  cancelled: "bg-rose-100 text-rose-800 border border-rose-200",
 };
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+function formatDateBD(d: string | Date | null | undefined) {
+  if (!d) return "-";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
 }
 
 export default async function AdminDashboardPage({
@@ -36,7 +80,7 @@ export default async function AdminDashboardPage({
   const from = fromParam || isoDate(monthStart);
   const to = toParam || isoDate(today);
 
-  // Date presets (each keeps the current chart granularity).
+  // Date presets
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday
   const last30 = new Date(today);
@@ -48,142 +92,308 @@ export default async function AdminDashboardPage({
     { label: "Last 30 Days", from: isoDate(last30), to: isoDate(today) },
   ];
 
-  const [stats, period, chart, topProducts, recentOrders] = await Promise.all([
+  const [stats, period, chart, topProducts, recentOrders, recentCustomers] = await Promise.all([
     dashboardStats(),
     salesReport(from, to),
     salesSeries(from, to, granularity),
     topSellingProducts(5, from, to),
-    listOrdersWithProductSummary(8, from, to),
+    listOrdersWithProductSummary(10),
+    getLatestCustomers(10),
   ]);
 
-  // At-a-glance snapshot cards (current state / fixed windows, not range-scoped).
-  const snapshot = [
-    { label: "Today's Orders", value: stats.todayOrders, color: "from-blue-500 to-blue-600" },
-    { label: "Today's Sales", value: formatTaka(stats.todaySales), color: "from-emerald-500 to-emerald-600" },
-    { label: "This Month's Sales", value: formatTaka(stats.monthSales), color: "from-teal-500 to-teal-600" },
-    { label: "Customers", value: stats.registeredUsers, color: "from-orange-500 to-orange-600" },
-    { label: "Products", value: stats.totalProducts, color: "from-cyan-500 to-cyan-600" },
-    { label: "In Stock", value: stats.inStockProducts, color: "from-indigo-500 to-indigo-600" },
-    { label: "Out of Stock", value: stats.outOfStockProducts, color: "from-rose-500 to-rose-600" },
+  // 12 Metric Cards config matching the user's screenshot
+  const statCards = [
+    {
+      title: "TOTAL ORDER",
+      value: stats.totalOrders,
+      icon: ShoppingCart,
+      gradient: "from-[#2563eb] to-[#3b82f6]", // Blue
+    },
+    {
+      title: "TODAY'S ORDER",
+      value: stats.todayOrders,
+      icon: ShoppingBag,
+      gradient: "from-[#059669] to-[#10b981]", // Emerald Green
+    },
+    {
+      title: "PRODUCTS",
+      value: stats.totalProducts,
+      icon: Layers,
+      gradient: "from-[#0891b2] to-[#06b6d4]", // Cyan
+    },
+    {
+      title: "CUSTOMER",
+      value: stats.uniqueCustomers,
+      icon: Users,
+      gradient: "from-[#ea580c] to-[#f97316]", // Orange
+    },
+    {
+      title: "TOTAL STOCK",
+      value: `${stats.totalStock} Pcs`,
+      icon: Boxes,
+      gradient: "from-[#4f46e5] to-[#6366f1]", // Indigo
+    },
+    {
+      title: "AVAILABLE STOCK",
+      value: `${stats.availableStock} Pcs`,
+      icon: CheckCircle2,
+      gradient: "from-[#0d9488] to-[#14b8a6]", // Teal
+    },
+    {
+      title: "TOTAL STOCK VALUE",
+      value: formatTaka(stats.stockValue),
+      icon: CircleDollarSign,
+      gradient: "from-[#475569] to-[#64748b]", // Slate-Purple
+    },
+    {
+      title: "PURCHASE VALUE",
+      value: formatTaka(stats.purchaseValue),
+      icon: CreditCard,
+      gradient: "from-[#f97316] to-[#fb923c]", // Salmon-Orange
+    },
+    {
+      title: "TOTAL PURCHASE",
+      value: stats.totalPurchase > 0 ? formatTaka(stats.totalPurchase) : "0.00",
+      icon: Receipt,
+      gradient: "from-[#0284c7] to-[#38bdf8]", // Sky Blue
+    },
+    {
+      title: "TOTAL SALES",
+      value: stats.totalSales > 0 ? formatTaka(stats.totalSales) : "0.00",
+      icon: TrendingUp,
+      gradient: "from-[#16a34a] to-[#22c55e]", // Bright Green
+    },
+    {
+      title: "NET PROFIT",
+      value: stats.netProfit > 0 ? formatTaka(stats.netProfit) : "0.00",
+      icon: DollarSign,
+      gradient: "from-[#e11d48] to-[#f43f5e]", // Rose-Pink
+    },
+    {
+      title: "DELIVERED ORDERS",
+      value: stats.deliveredOrders,
+      icon: Truck,
+      gradient: "from-[#1e293b] to-[#334155]", // Dark Slate Navy
+    },
   ];
 
-  const periodStatus = [
-    { label: "Pending", value: period.byStatus.pending, cls: "text-yellow-700 bg-yellow-50 border-yellow-200" },
-    { label: "Processing", value: period.byStatus.processing, cls: "text-blue-700 bg-blue-50 border-blue-200" },
-    { label: "Completed", value: period.byStatus.completed, cls: "text-green-700 bg-green-50 border-green-200" },
-    { label: "Cancelled & Refunded", value: period.byStatus.cancelled, cls: "text-red-700 bg-red-50 border-red-200" },
+  // 14 Module Control Cards (matching screenshot 2)
+  const moduleCards = [
+    {
+      title: "Tag Manager",
+      description: "Add & update your GTM id",
+      actionText: "Update →",
+      href: "/admin/gtm",
+      icon: Tag,
+      iconColor: "text-indigo-600 bg-indigo-50",
+    },
+    {
+      title: "Pixel Manage",
+      description: "Add & update your Pixel id",
+      actionText: "Update →",
+      href: "/admin/gtm",
+      icon: Share2,
+      iconColor: "text-blue-600 bg-blue-50",
+    },
+    {
+      title: "Mail SMTP",
+      description: "Manage your mail system",
+      actionText: "Update →",
+      href: "/admin/settings/smtp",
+      icon: Mail,
+      iconColor: "text-emerald-600 bg-emerald-50",
+    },
+    {
+      title: "SMS Gateway",
+      description: "Add & update your SMS gateway",
+      actionText: "Update →",
+      href: "/admin/settings/courier",
+      icon: MessageSquare,
+      iconColor: "text-purple-600 bg-purple-50",
+    },
+    {
+      title: "Payment Gateway",
+      description: "Configure your payment gateway",
+      actionText: "Manage →",
+      href: "/admin/settings",
+      icon: DollarSign,
+      iconColor: "text-teal-600 bg-teal-50",
+    },
+    {
+      title: "Courier API",
+      description: "Integrate shipping services",
+      actionText: "Manage →",
+      href: "/admin/settings/courier",
+      icon: Truck,
+      iconColor: "text-amber-600 bg-amber-50",
+    },
+    {
+      title: "Shipping Charge",
+      description: "Add & update your shipping charge",
+      actionText: "Create →",
+      href: "/admin/settings/courier",
+      icon: PackageCheck,
+      iconColor: "text-cyan-600 bg-cyan-50",
+    },
+    {
+      title: "Fraud API",
+      description: "Integrate fraud check API services",
+      actionText: "Update →",
+      href: "/admin/settings/fraud-api",
+      icon: ShieldAlert,
+      iconColor: "text-rose-600 bg-rose-50",
+    },
+    {
+      title: "IP Block",
+      description: "Manage blocked IP addresses",
+      actionText: "Security →",
+      href: "/admin/ip-block",
+      icon: Ban,
+      iconColor: "text-red-600 bg-red-50",
+    },
+    {
+      title: "Duplicate Order",
+      description: "Update your duplicate order setting",
+      actionText: "Update →",
+      href: "/admin/settings",
+      icon: Copy,
+      iconColor: "text-violet-600 bg-violet-50",
+    },
+    {
+      title: "Order Reports",
+      description: "Check your product order report",
+      actionText: "Check →",
+      href: "/admin/reports",
+      icon: BarChart3,
+      iconColor: "text-blue-600 bg-blue-50",
+    },
+    {
+      title: "Stock Report",
+      description: "Check your product stock report",
+      actionText: "Check →",
+      href: "/admin/products",
+      icon: Boxes,
+      iconColor: "text-emerald-600 bg-emerald-50",
+    },
+    {
+      title: "Social Message Manage",
+      description: "Manage social media messaging channels",
+      actionText: "Manage →",
+      href: "/admin/settings",
+      icon: MessageSquare,
+      iconColor: "text-purple-600 bg-purple-50",
+    },
+    {
+      title: "Create Page",
+      description: "Add & update your landing page",
+      actionText: "Add →",
+      href: "/admin/banners",
+      icon: FilePlus,
+      iconColor: "text-indigo-600 bg-indigo-50",
+    },
   ];
-
-  const rangeQs = (extra: Record<string, string>) =>
-    "/admin?" + new URLSearchParams({ from, to, g: granularity, ...extra }).toString();
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {snapshot.map((c) => (
-          <div key={c.label} className={`bg-gradient-to-br ${c.color} text-white rounded-xl p-4 shadow-sm`}>
-            <div className="text-xs opacity-80 mb-1">{c.label}</div>
-            <div className="text-lg font-bold">{c.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div className="flex flex-wrap gap-2">
-            {presets.map((p) => {
-              const active = p.from === from && p.to === to;
-              return (
-                <Link
-                  key={p.label}
-                  href={`/admin?${new URLSearchParams({ from: p.from, to: p.to, g: granularity })}`}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
-                    active ? "bg-brand-navy text-white border-brand-navy" : "border-gray-300 text-gray-600"
-                  }`}
-                >
-                  {p.label}
-                </Link>
-              );
-            })}
-          </div>
-          <form className="flex items-end gap-2 text-sm">
-            <input type="hidden" name="g" value={granularity} />
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-gray-500">From</span>
-              <input type="date" name="from" defaultValue={from} className="input py-1" />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-gray-500">To</span>
-              <input type="date" name="to" defaultValue={to} className="input py-1" />
-            </label>
-            <button className="bg-brand-navy text-white px-3 py-1.5 rounded-lg font-medium">Apply</button>
-          </form>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <div className="bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-xl p-4">
-            <div className="text-xs opacity-80 mb-1">Orders</div>
-            <div className="text-lg font-bold">{period.totalOrders}</div>
-          </div>
-          <div className="bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-xl p-4">
-            <div className="text-xs opacity-80 mb-1">Sales</div>
-            <div className="text-lg font-bold">{formatTaka(period.totalSales)}</div>
-          </div>
-          {periodStatus.map((s) => (
-            <div key={s.label} className={`rounded-xl border p-4 ${s.cls}`}>
-              <div className="text-xs mb-1">{s.label}</div>
-              <div className="text-lg font-bold">{s.value}</div>
+    <div className="space-y-8">
+      {/* 1. Top 12 Stat Cards Grid (4 columns × 3 rows) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <div
+              key={c.title}
+              className={`bg-gradient-to-r ${c.gradient} text-white rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between min-h-[96px]`}
+            >
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0 backdrop-blur-xs">
+                <Icon className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-right flex-1 pl-3">
+                <div className="text-[11px] font-bold tracking-wider opacity-90 uppercase">
+                  {c.title}
+                </div>
+                <div className="text-xl sm:text-2xl font-black tracking-tight mt-1">
+                  {c.value}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="font-semibold">Sales Chart</h2>
-          <div className="flex gap-1 text-sm">
-            {(["daily", "weekly", "monthly"] as const).map((gran) => (
-              <Link
-                key={gran}
-                href={rangeQs({ g: gran })}
-                className={`px-3 py-1 rounded-lg capitalize ${
-                  granularity === gran ? "bg-brand-orange text-white" : "text-gray-600 border border-gray-300"
-                }`}
-              >
-                {gran}
-              </Link>
-            ))}
+      {/* 2. Dual Live Data Tables Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Card: LATEST 10 ORDERS */}
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden flex flex-col">
+          {/* Purple Header Bar */}
+          <div className="bg-[#5b46f5] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <ShoppingCart className="w-4 h-4 text-white/90" />
+              <h2 className="font-bold text-sm tracking-wide uppercase">Latest 10 Orders</h2>
+            </div>
+            <Link
+              href="/admin/orders"
+              className="text-white/80 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors"
+              title="View all orders"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Link>
           </div>
-        </div>
-        <SalesChart data={chart} />
-      </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Recent Orders</h2>
-            <Link href="/admin/orders" className="text-brand-orange text-sm font-medium">View all →</Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b border-gray-200">
-                  <th className="py-2 pr-4">Invoice</th>
-                  <th className="py-2 pr-4">Customer</th>
-                  <th className="py-2 pr-4">Amount</th>
-                  <th className="py-2 pr-4">Status</th>
+          {/* Table */}
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-gray-50/75 text-gray-500 font-semibold border-b border-gray-100">
+                <tr>
+                  <th className="py-2.5 px-3 w-8">#</th>
+                  <th className="py-2.5 px-3">PRODUCT</th>
+                  <th className="py-2.5 px-3">INVOICE</th>
+                  <th className="py-2.5 px-3">AMOUNT</th>
+                  <th className="py-2.5 px-3">CUSTOMER</th>
+                  <th className="py-2.5 px-3 text-center">STATUS</th>
                 </tr>
               </thead>
-              <tbody>
-                {recentOrders.map((o) => (
-                  <tr key={o.id} className="border-b border-gray-100">
-                    <td className="py-2 pr-4">{o.invoice_no || `#${o.id}`}</td>
-                    <td className="py-2 pr-4">{o.customer_name}</td>
-                    <td className="py-2 pr-4 font-medium">{formatTaka(o.total)}</td>
-                    <td className="py-2 pr-4">
-                      <span className={`text-xs font-semibold px-2 py-1 rounded ${STATUS_COLOR[o.status]}`}>
+              <tbody className="divide-y divide-gray-100">
+                {recentOrders.map((o, idx) => (
+                  <tr key={o.id} className="hover:bg-gray-50/70 transition-colors">
+                    <td className="py-3 px-3 text-gray-400 font-medium">{idx + 1}</td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2 max-w-[180px]">
+                        {o.productImage ? (
+                          <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shrink-0 relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={o.productImage}
+                              alt={o.productSummary}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-500 flex items-center justify-center shrink-0">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                        )}
+                        <span className="font-medium text-gray-800 truncate" title={o.productSummary}>
+                          {o.productSummary}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 whitespace-nowrap">
+                      <span className="bg-gray-100 text-gray-700 font-mono px-2 py-0.5 rounded-full text-[11px] font-semibold border border-gray-200">
+                        {o.invoice_no || `${o.id}`}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 whitespace-nowrap font-bold text-emerald-600">
+                      {formatTaka(o.total)}
+                    </td>
+                    <td className="py-3 px-3 font-semibold text-gray-700 uppercase whitespace-nowrap">
+                      {o.customer_name}
+                    </td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                          STATUS_BADGE_STYLE[o.status] || "bg-gray-100 text-gray-700"
+                        }`}
+                      >
                         {o.status}
                       </span>
                     </td>
@@ -191,7 +401,9 @@ export default async function AdminDashboardPage({
                 ))}
                 {recentOrders.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-gray-400">No orders in this period</td>
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                      No recent orders found.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -199,35 +411,193 @@ export default async function AdminDashboardPage({
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="font-semibold mb-4">Best-Selling Products</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b border-gray-200">
-                  <th className="py-2 pr-4">#</th>
-                  <th className="py-2 pr-4">Product</th>
-                  <th className="py-2 pr-4">Sold</th>
-                  <th className="py-2 pr-4">Revenue</th>
+        {/* Right Card: LATEST CUSTOMERS */}
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden flex flex-col">
+          {/* Green Header Bar */}
+          <div className="bg-[#10b981] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <Users className="w-4 h-4 text-white/90" />
+              <h2 className="font-bold text-sm tracking-wide uppercase">Latest Customers</h2>
+            </div>
+            <Link
+              href="/admin/users"
+              className="text-white/80 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors"
+              title="View all users"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-gray-50/75 text-gray-500 font-semibold border-b border-gray-100">
+                <tr>
+                  <th className="py-2.5 px-3 w-8">ID</th>
+                  <th className="py-2.5 px-3">NAME</th>
+                  <th className="py-2.5 px-3">PHONE</th>
+                  <th className="py-2.5 px-3">DATE</th>
+                  <th className="py-2.5 px-3 text-center">STATUS</th>
                 </tr>
               </thead>
-              <tbody>
-                {topProducts.map((p, i) => (
-                  <tr key={p.name} className="border-b border-gray-100">
-                    <td className="py-2 pr-4 text-gray-400">{i + 1}</td>
-                    <td className="py-2 pr-4">{p.name}</td>
-                    <td className="py-2 pr-4 font-medium">{p.qty}</td>
-                    <td className="py-2 pr-4">{formatTaka(p.revenue)}</td>
+              <tbody className="divide-y divide-gray-100">
+                {recentCustomers.map((c, idx) => (
+                  <tr key={c.id || idx} className="hover:bg-gray-50/70 transition-colors">
+                    <td className="py-3 px-3 text-gray-400 font-medium">{idx + 1}</td>
+                    <td className="py-3 px-3 font-semibold text-gray-800 uppercase whitespace-nowrap">
+                      {c.name || "Customer"}
+                    </td>
+                    <td className="py-3 px-3 font-mono text-gray-600 whitespace-nowrap">
+                      {c.phone}
+                    </td>
+                    <td className="py-3 px-3 text-gray-500 whitespace-nowrap">
+                      {formatDateBD(c.created_at)}
+                    </td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
+                      <span className="bg-amber-400/90 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                        {c.status || "active"}
+                      </span>
+                    </td>
                   </tr>
                 ))}
-                {topProducts.length === 0 && (
+                {recentCustomers.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-gray-400">No sales in this period</td>
+                    <td colSpan={5} className="py-8 text-center text-gray-400">
+                      No customer records found.
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      {/* 3. Module Controls & Quick Settings Grid (from screenshot 2) */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 tracking-tight flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-orange-500" />
+              <span>Quick Settings & Modules</span>
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Direct shortcuts to manage integrations, marketing tools, APIs, and reports
+            </p>
+          </div>
+          <Link
+            href="/admin/settings"
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+          >
+            <span>All Settings</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {moduleCards.map((m) => {
+            const Icon = m.icon;
+            return (
+              <div
+                key={m.title}
+                className="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-xs hover:shadow-md hover:border-gray-300 transition-all flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="flex items-center gap-3 mb-2.5">
+                    <div className={`w-9 h-9 rounded-xl ${m.iconColor} flex items-center justify-center shrink-0`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-bold text-sm text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                      {m.title}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                    {m.description}
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <Link
+                    href={m.href}
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform"
+                  >
+                    <span>{m.actionText}</span>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 4. Sales Analytics Chart & Range Filter Section */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-bold text-base text-gray-900 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <span>Sales Overview & Analytics</span>
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">Filter sales and performance by date</p>
+          </div>
+
+          {/* Granularity & Presets */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+              {(["daily", "weekly", "monthly"] as const).map((gran) => (
+                <Link
+                  key={gran}
+                  href={`/admin?from=${from}&to=${to}&g=${gran}`}
+                  className={`px-3 py-1 rounded-lg capitalize transition-colors ${
+                    granularity === gran ? "bg-white text-indigo-600 shadow-xs" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {gran}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Date Presets Form */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-gray-100">
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p) => {
+              const active = p.from === from && p.to === to;
+              return (
+                <Link
+                  key={p.label}
+                  href={`/admin?from=${p.from}&to=${p.to}&g=${granularity}`}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                    active
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {p.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <form className="flex items-center gap-2 text-xs">
+            <input type="hidden" name="g" value={granularity} />
+            <div className="flex items-center gap-1">
+              <span className="text-gray-400">From:</span>
+              <input type="date" name="from" defaultValue={from} className="border border-gray-200 rounded-lg px-2 py-1 bg-white" />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-400">To:</span>
+              <input type="date" name="to" defaultValue={to} className="border border-gray-200 rounded-lg px-2 py-1 bg-white" />
+            </div>
+            <button className="bg-indigo-600 text-white px-3 py-1 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+              Filter
+            </button>
+          </form>
+        </div>
+
+        {/* Chart View */}
+        <div className="pt-2">
+          <SalesChart data={chart} />
         </div>
       </div>
     </div>
