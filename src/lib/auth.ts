@@ -2,11 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getDb } from "./db";
+import { getSessionSecret } from "./session-secret";
 
 const SESSION_COOKIE = "shop_admin_session";
-const SECRET = new TextEncoder().encode(
-  process.env.ADMIN_SESSION_SECRET || "dev-only-secret-change-me-in-production-0000"
-);
 
 export async function verifyAdminCredentials(username: string, password: string): Promise<boolean> {
   const db = await getDb();
@@ -17,11 +15,15 @@ export async function verifyAdminCredentials(username: string, password: string)
 }
 
 export async function createSessionToken(username: string): Promise<string> {
+  const secret = getSessionSecret();
+  if (!secret) {
+    throw new Error("ADMIN_SESSION_SECRET is not configured — cannot create a session.");
+  }
   return new SignJWT({ username })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(SECRET);
+    .sign(secret);
 }
 
 export async function setSessionCookie(token: string) {
@@ -41,11 +43,13 @@ export async function clearSessionCookie() {
 }
 
 export async function getSessionUsername(): Promise<string | null> {
+  const secret = getSessionSecret();
+  if (!secret) return null; // fail closed when ADMIN_SESSION_SECRET is unset in production
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, secret);
     return (payload.username as string) || null;
   } catch {
     return null;

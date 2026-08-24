@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { getSessionSecret } from "@/lib/session-secret";
 
 const SESSION_COOKIE = "shop_admin_session";
-const SECRET = new TextEncoder().encode(
-  process.env.ADMIN_SESSION_SECRET || "dev-only-secret-change-me-in-production-0000"
-);
 
 // Public admin endpoints (auth flow itself) — everything else under /admin or
 // /api/admin requires a valid admin session.
@@ -17,11 +15,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  const secret = getSessionSecret();
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   let valid = false;
-  if (token) {
+  // secret === null means ADMIN_SESSION_SECRET is unset in production → fail closed.
+  if (secret && token) {
     try {
-      await jwtVerify(token, SECRET);
+      await jwtVerify(token, secret);
       valid = true;
     } catch {
       valid = false;
