@@ -12,6 +12,7 @@ import { getSessionUsername } from "@/lib/auth";
 import { getSetting } from "@/lib/settings";
 import AdminEditorInjector from "@/components/editor/AdminEditorInjector";
 import ChatbotScript from "@/components/ChatbotScript";
+import StorefrontChrome from "@/components/StorefrontChrome";
 
 const hindSiliguri = Hind_Siliguri({
   subsets: ["bengali", "latin"],
@@ -56,12 +57,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col has-mobile-nav">
         {gtmId && <GtmNoScript gtmId={gtmId} />}
         <AdminEditorInjector>
-          <Header isAdmin={isAdmin} logo={logo} />
+          <StorefrontChrome>
+            <Header isAdmin={isAdmin} logo={logo} />
+          </StorefrontChrome>
           <main className="flex-1">{children}</main>
-          <Footer logo={logo} />
-          <MobileNav />
-          <FloatingButtons />
-          <CartDrawer />
+          <StorefrontChrome>
+            <Footer logo={logo} />
+            <MobileNav />
+            <FloatingButtons />
+            <CartDrawer />
+          </StorefrontChrome>
         </AdminEditorInjector>
         {gtmId && <GtmScript gtmId={gtmId} />}
         <ChatbotScript />
