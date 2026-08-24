@@ -8,7 +8,9 @@ import FloatingButtons from "@/components/FloatingButtons";
 import CartDrawer from "@/components/CartDrawer";
 import { GtmScript, GtmNoScript } from "@/components/GtmScript";
 import { getActiveGtmId } from "@/lib/gtm";
+import { getSessionUsername } from "@/lib/auth";
 import AdminEditorInjector from "@/components/editor/AdminEditorInjector";
+import ChatbotScript from "@/components/ChatbotScript";
 
 const hindSiliguri = Hind_Siliguri({
   subsets: ["bengali", "latin"],
@@ -26,12 +28,15 @@ export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const gtmId = await getActiveGtmId();
+  const username = await getSessionUsername();
+  const isAdmin = !!username;
+
   return (
     <html lang="bn" className={`h-full antialiased ${hindSiliguri.variable}`}>
       <body className="min-h-full flex flex-col has-mobile-nav">
         {gtmId && <GtmNoScript gtmId={gtmId} />}
         <AdminEditorInjector>
-          <Header />
+          <Header isAdmin={isAdmin} />
           <main className="flex-1">{children}</main>
           <Footer />
           <MobileNav />
@@ -39,6 +44,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <CartDrawer />
         </AdminEditorInjector>
         {gtmId && <GtmScript gtmId={gtmId} />}
+        <ChatbotScript />
       </body>
     </html>
   );

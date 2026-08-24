@@ -8,6 +8,7 @@ const STATUS_LABEL: Record<string, string> = {
   pending: "Pending",
   processing: "Confirmed",
   shipped: "Shipped",
+  out_for_delivery: "Out for Delivery",
   delivered: "Delivered",
   completed: "Completed",
   cancelled: "Cancelled",
@@ -17,6 +18,7 @@ const HAPPY_PATH: { key: string; label: string }[] = [
   { key: "pending", label: "Pending" },
   { key: "processing", label: "Confirmed" },
   { key: "shipped", label: "Shipped" },
+  { key: "out_for_delivery", label: "Out for Delivery" },
   { key: "delivered", label: "Delivered" },
 ];
 

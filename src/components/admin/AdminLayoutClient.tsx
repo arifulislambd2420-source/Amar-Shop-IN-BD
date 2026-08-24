@@ -51,6 +51,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
           </button>
         </div>
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1 text-sm overflow-y-auto">
+          <AdminLink href="/" onClick={() => setSidebarOpen(false)}>🌍 Live Website</AdminLink>
+          <div className="h-px bg-white/10 my-2"></div>
           <AdminLink href="/admin" onClick={() => setSidebarOpen(false)}>📊 Dashboard</AdminLink>
           <AdminLink href="/admin/orders" onClick={() => setSidebarOpen(false)}>🧾 Orders</AdminLink>
           <AdminLink href="/admin/products" onClick={() => setSidebarOpen(false)}>📦 Products</AdminLink>

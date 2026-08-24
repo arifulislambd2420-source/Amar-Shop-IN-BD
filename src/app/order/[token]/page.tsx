@@ -47,7 +47,24 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
           {order.thana}, {order.district} {order.postcode}<br />
           {order.phone}
         </p>
-        <p className="text-sm text-gray-600 mt-2">পেমেন্ট: ক্যাশ অন ডেলিভারি</p>
+        <div className="text-sm text-gray-600 mt-2 flex items-center flex-wrap gap-2">
+          <span>পেমেন্ট: {
+            order.payment_method === 'cod' ? 'ক্যাশ অন ডেলিভারি' : 
+            order.payment_method === 'advance' ? `অ্যাডভান্স ডেলিভারি চার্জ (${formatTaka(order.advance_amount || 0)})` :
+            order.payment_method === 'bkash' ? 'বিকাশ' :
+            order.payment_method === 'sslcommerz' ? 'কার্ড / মোবাইল ব্যাংকিং (SSLCommerz)' : 
+            order.payment_method
+          }</span>
+          <span className={`font-medium px-2 py-0.5 rounded-full text-xs ${
+            order.payment_status === 'paid' ? 'bg-green-100 text-green-700' :
+            order.payment_status === 'advance_paid' ? 'bg-blue-100 text-blue-700' :
+            'bg-yellow-100 text-yellow-700'
+          }`}>
+            {order.payment_status === 'paid' ? 'সম্পূর্ণ পরিশোধিত' :
+             order.payment_status === 'advance_paid' ? 'আংশিক পরিশোধিত' :
+             'পরিশোধিত নয়'}
+          </span>
+        </div>
       </div>
 
       <div className="flex gap-3 justify-center">

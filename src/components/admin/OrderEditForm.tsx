@@ -36,6 +36,8 @@ export default function OrderEditForm({
   const [address, setAddress] = useState(order.address);
   const [shippingFee, setShippingFee] = useState(order.shipping_fee);
   const [orderDiscount, setOrderDiscount] = useState(order.discount);
+  const [paymentMethod, setPaymentMethod] = useState(order.payment_method || "cod");
+  const [paymentStatus, setPaymentStatus] = useState(order.payment_status || "unpaid");
   const [lineItems, setLineItems] = useState<LineItem[]>(
     items.map((it) => ({
       key: nextKey(),
@@ -101,6 +103,8 @@ export default function OrderEditForm({
           address,
           shipping_fee: shippingFee,
           discount: orderDiscount,
+          payment_method: paymentMethod,
+          payment_status: paymentStatus,
           items: lineItems.map((li) => ({
             product_id: li.product_id,
             product_name: li.product_name,
@@ -148,23 +152,93 @@ export default function OrderEditForm({
     }
   }
 
+  async function handleSendToPathao() {
+    if (!confirm("আপনি কি নিশ্চিত যে এই অর্ডারটি Pathao Courier এ পাঠাতে চান?")) return;
+    setSendingToCourier(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/pathao`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send to Pathao");
+        return;
+      }
+      alert(`Successfully sent! Tracking Code: ${data.tracking_code}`);
+      router.refresh();
+    } catch {
+      setError("Network error while sending to Pathao");
+    } finally {
+      setSendingToCourier(false);
+    }
+  }
+
+  async function handleSendToRedX() {
+    if (!confirm("আপনি কি নিশ্চিত যে এই অর্ডারটি RedX Courier এ পাঠাতে চান?")) return;
+    setSendingToCourier(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/redx`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send to RedX");
+        return;
+      }
+      alert(`Successfully sent! Tracking Code: ${data.tracking_code}`);
+      router.refresh();
+    } catch {
+      setError("Network error while sending to RedX");
+    } finally {
+      setSendingToCourier(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <h1 className="text-2xl font-bold">অর্ডার এডিট #{order.id}</h1>
         {!order.consignment_id && (
-          <button
-            type="button"
-            onClick={handleSendToSteadfast}
-            disabled={sendingToCourier}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
-          >
-            {sendingToCourier ? "Sending..." : "🚀 Send to Steadfast"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleSendToSteadfast}
+              disabled={sendingToCourier}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
+            >
+              {sendingToCourier ? "Sending..." : "🚀 Steadfast"}
+            </button>
+            <button
+              type="button"
+              onClick={handleSendToPathao}
+              disabled={sendingToCourier}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
+            >
+              {sendingToCourier ? "Sending..." : "🚀 Pathao"}
+            </button>
+            <button
+              type="button"
+              onClick={handleSendToRedX}
+              disabled={sendingToCourier}
+              className="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
+            >
+              {sendingToCourier ? "Sending..." : "🚀 RedX"}
+            </button>
+          </div>
         )}
+        <a
+          href={`/admin/orders/${order.id}/invoice`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          📄 Print Invoice
+        </a>
         {order.consignment_id && (
           <span className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-lg text-sm font-medium">
-            Steadfast ID: {order.consignment_id} ({order.courier_status})
+            Courier ID: {order.consignment_id} ({order.courier_status})
           </span>
         )}
       </div>
@@ -313,6 +387,35 @@ export default function OrderEditForm({
               className="w-full border border-gray-300 rounded px-3 py-2"
               rows={3}
             />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <h2 className="font-semibold mb-2">পেমেন্ট তথ্য</h2>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">পেমেন্ট পদ্ধতি</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="cod">Cash on Delivery (COD)</option>
+              <option value="advance">Advance Delivery Charge</option>
+              <option value="bkash">bKash</option>
+              <option value="sslcommerz">SSLCommerz (Card/Bank)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">পেমেন্ট স্ট্যাটাস</label>
+            <select
+              value={paymentStatus}
+              onChange={(e) => setPaymentStatus(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="unpaid">Unpaid</option>
+              <option value="advance_paid">Advance Paid</option>
+              <option value="paid">Paid (Full)</option>
+            </select>
           </div>
         </div>
 

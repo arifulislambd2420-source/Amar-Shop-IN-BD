@@ -4,7 +4,7 @@ import { getSessionUsername } from "@/lib/auth";
 import { updateOrderStatus, updateOrderWithItems, getOrderByIdUnsafe, getOrderItems } from "@/lib/orders";
 import type { OrderStatus } from "@/lib/types";
 
-const VALID_STATUSES: OrderStatus[] = ["pending", "processing", "completed", "cancelled"];
+const VALID_STATUSES: OrderStatus[] = ["pending", "processing", "shipped", "out_for_delivery", "delivered", "completed", "cancelled"];
 
 const orderUpdateSchema = z.object({
   customer_name: z.string().min(1, "নাম আবশ্যক"),
@@ -12,6 +12,8 @@ const orderUpdateSchema = z.object({
   address: z.string().min(1, "ঠিকানা আবশ্যক"),
   shipping_fee: z.number().min(0),
   discount: z.number().min(0),
+  payment_method: z.string().optional(),
+  payment_status: z.string().optional(),
   items: z
     .array(
       z.object({

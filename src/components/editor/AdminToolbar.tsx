@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useLiveEditor } from "./LiveEditorProvider";
+import Link from "next/link";
 
 export default function AdminToolbar() {
   const { isEditingEnabled, setIsEditingEnabled, publishChanges, unsavedChanges } = useLiveEditor();
@@ -24,6 +25,15 @@ export default function AdminToolbar() {
           />
           <span className="text-sm font-medium">Enable Edit Mode</span>
         </label>
+
+        <div className="h-4 w-px bg-gray-600 mx-2 hidden sm:block"></div>
+        
+        <Link href="/admin" className="text-sm font-medium text-gray-300 hover:text-white transition-colors bg-gray-800 px-3 py-1 rounded border border-gray-700 flex items-center space-x-1">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+          <span>Dashboard</span>
+        </Link>
       </div>
 
       <div className="flex items-center space-x-4">

@@ -3,6 +3,7 @@ import mysql from "mysql2/promise";
 import { getDb } from "./db";
 import { SHIPPING_FEE } from "./format";
 import type { Order, OrderItem, OrderStatus } from "./types";
+import { sendSMS } from "./sms";
 
 export type NewOrderInput = {
   customer_name: string;
@@ -14,6 +15,9 @@ export type NewOrderInput = {
   address: string;
   notes?: string;
   couponCode?: string;
+  payment_method?: string;
+  advance_amount?: number;
+  payment_status?: string;
   items: { productId: number; quantity: number; variantId?: number }[];
 };
 
@@ -100,9 +104,13 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
     // Check if orders table has discount column, we assume it does via types/schema. Actually db.ts might not have discount column on orders. Let's add discount to subtotal/total calculation without a discount column if it doesn't exist, but wait, updateOrderWithItems uses `discount` column. Oh, I should ensure orders table has `discount` column in db.ts! Let me check db.ts again if it had discount column. I will use subtotal = subtotal - discount maybe? Wait, order schema in db.ts originally has total, subtotal. Let's add discount column to orders if not present.
     // wait, we can just insert discount if the table has it. updateOrderWithItems in orders.ts already references `discount` column. Wait, line 235: `UPDATE orders SET ... discount = ?`. So `discount` column already exists in `orders`! Wait, let me check the INSERT INTO below.
 
+    const paymentMethod = input.payment_method || 'cod';
+    const advanceAmount = input.advance_amount || 0;
+    const paymentStatus = input.payment_status || 'unpaid';
+
     const [orderResult] = await conn.execute(
-      `INSERT INTO orders (order_token, customer_name, phone, email, district, thana, postcode, address, payment_method, status, subtotal, shipping_fee, total, notes, discount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cod', 'pending', ?, ?, ?, ?, ?)`,
+      `INSERT INTO orders (order_token, customer_name, phone, email, district, thana, postcode, address, payment_method, status, subtotal, shipping_fee, total, notes, discount, advance_amount, payment_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
       [
         orderToken,
         input.customer_name,
@@ -112,11 +120,14 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
         input.thana,
         input.postcode || null,
         input.address,
+        paymentMethod,
         subtotal,
         shippingFee,
         total,
         input.notes || "",
-        discount
+        discount,
+        advanceAmount,
+        paymentStatus
       ]
     );
     const orderId = (orderResult as mysql.ResultSetHeader).insertId;
@@ -135,6 +146,17 @@ export async function createOrder(input: NewOrderInput): Promise<{ orderId: numb
     }
 
     await conn.commit();
+    
+    // Send order confirmation SMS
+    try {
+      await sendSMS(
+        input.phone,
+        `ধন্যবাদ! আপনার অর্ডার (#${orderId}) গ্রহণ করা হয়েছে। মোট বিল: ৳${total}। AmarShopBD`
+      );
+    } catch (e) {
+      console.error("Failed to send order SMS", e);
+    }
+
     return { orderId, orderToken };
   } catch (err) {
     await conn.rollback();
@@ -218,7 +240,23 @@ export async function listOrders(limit = 50): Promise<Order[]> {
 
 export async function updateOrderStatus(orderId: number, status: OrderStatus): Promise<void> {
   const db = await getDb();
+  const [rows] = await db.execute("SELECT phone FROM orders WHERE id = ?", [orderId]);
+  const order = (rows as any[])[0];
+
   await db.execute("UPDATE orders SET status = ? WHERE id = ?", [status, orderId]);
+
+  // Send status update SMS
+  if (order && order.phone) {
+    let msg = "";
+    if (status === "processing") msg = `আপনার অর্ডার (#${orderId}) কনফার্ম করা হয়েছে। AmarShopBD`;
+    else if (status === "shipped") msg = `আপনার অর্ডার (#${orderId}) কুরিয়ারে পাঠানো হয়েছে। AmarShopBD`;
+    else if (status === "out_for_delivery") msg = `আপনার অর্ডার (#${orderId}) ডেলিভারির জন্য বের হয়েছে। AmarShopBD`;
+    else if (status === "delivered") msg = `আপনার অর্ডার (#${orderId}) সফলভাবে ডেলিভারি হয়েছে। ধন্যবাদ! AmarShopBD`;
+    
+    if (msg) {
+      sendSMS(order.phone, msg).catch(console.error);
+    }
+  }
 }
 
 export type OrderItemInput = {
@@ -235,6 +273,8 @@ export type OrderUpdateInput = {
   address: string;
   shipping_fee: number;
   discount: number;
+  payment_method?: string;
+  payment_status?: string;
   items: OrderItemInput[];
 };
 
@@ -256,9 +296,12 @@ export async function updateOrderWithItems(orderId: number, input: OrderUpdateIn
     );
     const total = subtotal + input.shipping_fee - input.discount;
 
+    const paymentMethod = input.payment_method || 'cod';
+    const paymentStatus = input.payment_status || 'unpaid';
+
     await conn.execute(
-      `UPDATE orders SET customer_name = ?, phone = ?, address = ?, shipping_fee = ?, discount = ?, subtotal = ?, total = ? WHERE id = ?`,
-      [input.customer_name, normPhone(input.phone), input.address, input.shipping_fee, input.discount, subtotal, total, orderId]
+      `UPDATE orders SET customer_name = ?, phone = ?, address = ?, shipping_fee = ?, discount = ?, subtotal = ?, total = ?, payment_method = ?, payment_status = ? WHERE id = ?`,
+      [input.customer_name, normPhone(input.phone), input.address, input.shipping_fee, input.discount, subtotal, total, paymentMethod, paymentStatus, orderId]
     );
 
     await conn.execute("DELETE FROM order_items WHERE order_id = ?", [orderId]);

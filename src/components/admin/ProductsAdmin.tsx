@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { formatTaka } from "@/lib/format";
 import type { Product, Category, ProductVariant, ProductImage } from "@/lib/types";
+import ImageUploader from "./ImageUploader";
 
 type Brand = { id: number; name: string; logo: string | null };
 
@@ -437,9 +438,9 @@ export default function ProductsAdmin({
               <span className="font-medium text-gray-700">Stock *</span>
               <input required type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className="input" />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col gap-1 text-sm md:col-span-2">
               <span className="font-medium text-gray-700">Image path</span>
-              <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="input" />
+              <ImageUploader value={form.image} onChange={(url) => setForm({ ...form, image: url })} />
             </label>
             <label className="flex flex-col gap-1 text-sm">
               <span className="font-medium text-gray-700">SEO Title</span>
@@ -812,7 +813,7 @@ function GallerySection({ productId }: { productId: number }) {
       <form onSubmit={addImage} className="flex flex-wrap items-end gap-3 bg-gray-50 rounded-lg p-3">
         <label className="flex flex-col gap-1 text-sm flex-1 min-w-[200px]">
           <span className="font-medium text-gray-700">Image URL *</span>
-          <input value={url} onChange={(e) => setUrl(e.target.value)} className="input" placeholder="/products/... or https://..." />
+          <ImageUploader value={url} onChange={(val) => setUrl(val)} />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-gray-700">Alt</span>

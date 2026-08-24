@@ -14,6 +14,9 @@ const bodySchema = z.object({
   address: z.string().min(3, "বিস্তারিত ঠিকানা দিন"),
   notes: z.string().optional(),
   couponCode: z.string().optional(),
+  payment_method: z.string().optional(),
+  advance_amount: z.number().optional(),
+  payment_status: z.string().optional(),
   items: z
     .array(z.object({ productId: z.number(), quantity: z.number().min(1), variantId: z.number().optional() }))
     .min(1, "কার্ট খালি"),

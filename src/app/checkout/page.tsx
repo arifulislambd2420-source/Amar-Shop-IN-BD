@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCartStore } from "@/lib/cart-store";
 import { formatTaka, SHIPPING_FEE } from "@/lib/format";
 import { BD_DISTRICTS } from "@/lib/districts";
+import { pushToDataLayer } from "@/lib/gtm-client";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "advance" | "bkash" | "sslcommerz">("cod");
 
   const [form, setForm] = useState({
     customer_name: "",
@@ -82,6 +84,12 @@ export default function CheckoutPage() {
       if (appliedCoupon) {
         payload.couponCode = appliedCoupon.code;
       }
+      
+      payload.payment_method = paymentMethod;
+      if (paymentMethod === "advance") {
+        payload.advance_amount = SHIPPING_FEE;
+        payload.payment_status = "unpaid"; // will be updated when payment is successful
+      }
 
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -94,8 +102,32 @@ export default function CheckoutPage() {
         setSubmitting(false);
         return;
       }
+      const totalCost = Math.max(0, subtotal() + SHIPPING_FEE - (appliedCoupon?.discount_amount || 0));
+
+      pushToDataLayer("purchase", {
+        ecommerce: {
+          transaction_id: data.orderToken,
+          value: totalCost,
+          currency: "BDT",
+          shipping: SHIPPING_FEE,
+          coupon: appliedCoupon?.code || undefined,
+          items: items.map(i => ({
+            item_id: i.productId,
+            item_name: i.name,
+            price: i.price,
+            quantity: i.quantity
+          }))
+        }
+      });
+
       clear();
-      router.push(`/order/${data.orderToken}`);
+      
+      // Handle mock redirection for payment gateways
+      if (paymentMethod === "bkash" || paymentMethod === "sslcommerz" || paymentMethod === "advance") {
+        router.push(`/checkout/pay?token=${data.orderToken}&method=${paymentMethod}`);
+      } else {
+        router.push(`/order/${data.orderToken}`);
+      }
     } catch {
       setError("নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন");
       setSubmitting(false);
@@ -183,18 +215,39 @@ export default function CheckoutPage() {
           </Field>
 
           <div className="border border-gray-200 rounded-lg p-4">
-            <div className="font-medium mb-2">পেমেন্ট পদ্ধতি</div>
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="radio" checked readOnly /> ক্যাশ অন ডেলিভারি (Cash on Delivery)
+            <div className="font-medium mb-3">পেমেন্ট পদ্ধতি</div>
+            <div className="flex flex-col gap-3">
+              <label className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-brand-orange bg-brand-orange/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="payment" className="mt-1" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
+                <div>
+                  <div className="font-medium">ক্যাশ অন ডেলিভারি (Cash on Delivery)</div>
+                  <div className="text-xs text-gray-500">পণ্য হাতে পেয়ে ডেলিভারি ম্যানকে পেমেন্ট করুন</div>
+                </div>
               </label>
-              {["বিকাশ (bKash)", "নগদ (Nagad)", "রকেট (Rocket)"].map((name) => (
-                <label key={name} className="flex items-center gap-2 text-sm text-gray-400">
-                  <input type="radio" disabled />
-                  {name}
-                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">শীঘ্রই আসছে</span>
-                </label>
-              ))}
+              
+              <label className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${paymentMethod === 'advance' ? 'border-brand-orange bg-brand-orange/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="payment" className="mt-1" checked={paymentMethod === 'advance'} onChange={() => setPaymentMethod('advance')} />
+                <div>
+                  <div className="font-medium">অ্যাডভান্স ডেলিভারি চার্জ ({formatTaka(SHIPPING_FEE)})</div>
+                  <div className="text-xs text-gray-500">বিকাশ বা নগদের মাধ্যমে শুধুমাত্র ডেলিভারি চার্জ আগে পরিশোধ করুন, বাকি টাকা ক্যাশ অন ডেলিভারি</div>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${paymentMethod === 'bkash' ? 'border-brand-orange bg-brand-orange/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="payment" className="mt-1" checked={paymentMethod === 'bkash'} onChange={() => setPaymentMethod('bkash')} />
+                <div>
+                  <div className="font-medium">বিকাশ (bKash) - ফুল পেমেন্ট</div>
+                  <div className="text-xs text-gray-500">বিকাশের মাধ্যমে সম্পূর্ণ বিল অনলাইনে পরিশোধ করুন</div>
+                </div>
+              </label>
+              
+              <label className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${paymentMethod === 'sslcommerz' ? 'border-brand-orange bg-brand-orange/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="payment" className="mt-1" checked={paymentMethod === 'sslcommerz'} onChange={() => setPaymentMethod('sslcommerz')} />
+                <div>
+                  <div className="font-medium">কার্ড / মোবাইল ব্যাংকিং (SSLCommerz)</div>
+                  <div className="text-xs text-gray-500">ভিসা, মাস্টারকার্ড বা অন্যান্য মোবাইল ব্যাংকিং দিয়ে পে করুন</div>
+                </div>
+              </label>
             </div>
           </div>
 

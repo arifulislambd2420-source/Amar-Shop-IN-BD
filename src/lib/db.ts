@@ -294,6 +294,10 @@ async function initSchema(pool: mysql.Pool) {
   await ensureColumn(pool, "orders", "courier_status", "ALTER TABLE orders ADD COLUMN courier_status VARCHAR(50)");
   await ensureColumn(pool, "order_items", "discount", "ALTER TABLE order_items ADD COLUMN discount DECIMAL(10,2) NOT NULL DEFAULT 0");
 
+  // Phase 1 Payment columns
+  await ensureColumn(pool, "orders", "advance_amount", "ALTER TABLE orders ADD COLUMN advance_amount DECIMAL(10,2) NOT NULL DEFAULT 0");
+  await ensureColumn(pool, "orders", "payment_status", "ALTER TABLE orders ADD COLUMN payment_status VARCHAR(50) NOT NULL DEFAULT 'unpaid'");
+
   // Phase 1 PIM columns on products
   await ensureColumn(pool, "products", "sku", "ALTER TABLE products ADD COLUMN sku VARCHAR(64)");
   await ensureColumn(pool, "products", "status", "ALTER TABLE products ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'published'");

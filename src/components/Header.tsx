@@ -21,7 +21,7 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-export default function Header() {
+export default function Header({ isAdmin }: { isAdmin?: boolean }) {
   const cartCount = useCartStore((s) => s.count());
   const wishlistCount = useWishlistStore((s) => s.count());
   const [mounted, setMounted] = useState(false);
@@ -70,6 +70,14 @@ export default function Header() {
             </Link>
           ))}
           <div className="ml-auto flex items-center gap-4">
+            {isAdmin && (
+              <Link href="/admin" className="text-brand-orange font-bold flex items-center gap-1 hover:underline">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Admin Panel
+              </Link>
+            )}
             <Link href="/customer/login" className="hover:text-brand-orange">
               Login
             </Link>

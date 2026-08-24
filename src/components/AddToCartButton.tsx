@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import type { Product } from "@/lib/types";
+import { pushToDataLayer } from "@/lib/gtm-client";
 
 export function addProductToCart(
   product: Product,
@@ -19,16 +20,33 @@ export function addProductToCart(
   }) => void,
   options?: { quantity?: number; variantLabel?: string; variantId?: number; price?: number; stock?: number }
 ) {
+  const finalPrice = options?.price ?? product.sale_price ?? product.price;
+  
   addItem({
     productId: product.id,
     name: product.name,
     slug: product.slug,
-    price: options?.price ?? product.sale_price ?? product.price,
+    price: finalPrice,
     image: product.image,
     quantity: options?.quantity ?? 1,
     stock: options?.stock ?? product.stock,
     variantLabel: options?.variantLabel,
     variantId: options?.variantId,
+  });
+
+  pushToDataLayer("add_to_cart", {
+    ecommerce: {
+      currency: "BDT",
+      value: finalPrice * (options?.quantity ?? 1),
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          price: finalPrice,
+          quantity: options?.quantity ?? 1,
+        }
+      ]
+    }
   });
 }
 
