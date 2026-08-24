@@ -30,8 +30,8 @@ export async function GET() {
 
     for (const product of products) {
       const link = `${baseUrl}/product/${product.slug}`;
-      const imageLink = product.image_url ? 
-        (product.image_url.startsWith('http') ? product.image_url : `${baseUrl}${product.image_url}`) : 
+      const imageLink = product.image ? 
+        (product.image.startsWith('http') ? product.image : `${baseUrl}${product.image}`) : 
         `${baseUrl}/placeholder.png`;
       
       const availability = product.stock > 0 ? "in stock" : "out of stock";

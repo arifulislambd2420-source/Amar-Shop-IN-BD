@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import { checkAdminAPI } from "@/lib/auth";
+import { getSessionUsername } from "@/lib/auth";
 
 // Configure Cloudinary from env variables
 // Make sure to add CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
@@ -13,7 +13,7 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
-    const admin = await checkAdminAPI();
+    const admin = await getSessionUsername();
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    return new Promise((resolve, reject) => {
+    return new Promise<NextResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { folder: "amarshopbd" },
         (error, result) => {
