@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { getSessionUsername } from "@/lib/auth";
 
 export async function GET(_req: NextRequest) {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const db = await getDb();
     const [rows] = await db.query("SELECT * FROM flash_sales ORDER BY id DESC");
@@ -23,6 +25,7 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
     const { title, end_time, is_active, items } = body;

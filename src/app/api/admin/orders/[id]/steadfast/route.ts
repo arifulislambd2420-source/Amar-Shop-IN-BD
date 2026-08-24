@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { getSessionUsername } from "@/lib/auth";
 import type { Order } from "@/lib/types";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
     const orderId = parseInt(id, 10);

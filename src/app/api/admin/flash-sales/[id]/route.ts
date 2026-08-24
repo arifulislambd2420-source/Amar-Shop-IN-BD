@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { getSessionUsername } from "@/lib/auth";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
     const body = await req.json();
@@ -44,6 +46,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
     const db = await getDb();

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSettings, setSetting } from "@/lib/settings";
+import { getSessionUsername } from "@/lib/auth";
 
 export async function GET() {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const settings = await getSettings(["steadfast_api_key", "steadfast_secret_key"]);
   // Mask the secret key for security
   return NextResponse.json({
@@ -11,6 +13,7 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  if (!(await getSessionUsername())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { steadfast_api_key, steadfast_secret_key } = await req.json();
 
